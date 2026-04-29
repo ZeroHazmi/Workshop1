@@ -20,12 +20,16 @@ set(SOURCES
 	src/identity/Users/Users.cpp
 	src/identity/Profile/Profile.cpp
 	src/identity/Auth/Auth.cpp
+	src/identity/AuthUI.cpp
 	src/inventory/Shops/Shops.cpp
 	src/inventory/Apparel/Apparel.cpp
+	src/inventory/InventoryUI.cpp
 	src/transaction/Rental_Details/Rental_Details.cpp
 	src/transaction/Rental/Rental.cpp
+	src/transaction/RentalUI.cpp
 	src/DatabaseManager/DatabaseManager.cpp
-	tool/tool.cpp
+	src/tool/helper.cpp
+	src/tool/CLIComponents.cpp
 )
 
 include(CTest)

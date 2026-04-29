@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <expected>
+#include <string_view>
 
 namespace identify {
 	struct User {
@@ -30,3 +32,52 @@ namespace identify {
 	};
 }
 
+namespace identity::users {
+
+class Users {
+public:
+	Users() = default;
+	~Users() = default;
+
+	// READ: Get all users
+	static std::expected<std::vector<identify::User>, std::string> getAllUsers();
+
+	// READ: Get user by ID
+	static std::expected<identify::User, std::string> getUserById(int user_id);
+
+	// READ: Get user by username
+	static std::expected<identify::User, std::string> getUserByUsername(std::string_view username);
+
+	// CREATE: Add new staff user (Admin operation)
+	static std::expected<int, std::string> createStaffUser(
+		std::string_view username,
+		std::string_view password,
+		std::string_view staff_name,
+		std::string_view position,
+		std::string_view phone_no,
+		int shop_id
+	);
+
+	// UPDATE: Update user credentials
+	static std::expected<bool, std::string> updateUserCredentials(
+		int user_id,
+		std::string_view new_password
+	);
+
+	// UPDATE: Update user roles
+	static std::expected<bool, std::string> updateUserRoles(
+		int user_id,
+		std::string_view new_roles
+	);
+
+	// DELETE: Remove user (Admin operation)
+	static std::expected<bool, std::string> deleteUser(int user_id);
+
+	// Helper: Display all users in table format
+	static void displayAllUsers();
+
+	// Helper: Display staff management menu
+	static void displayStaffManagementMenu();
+};
+
+} // namespace identity::users
