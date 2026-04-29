@@ -1,48 +1,48 @@
 #include "DatabaseManager.h"
+#include <print>
 
-DatabaseManager::DatabaseManager() : driver(nullptr) {
+namespace database {
+
+DatabaseManager::~DatabaseManager() {
+    if (con) con->close();
+}
+
+std::expected<void, std::string> DatabaseManager::connect() {
     try {
         driver = get_driver_instance();
+        con.reset(driver->connect(host, user, pass));
+        con->setSchema(schema);
+        
+        std::println("Successfully connected to database database.");
+        return {}; 
     } catch (sql::SQLException& e) {
-        std::cerr << "Could not get a database driver instance: " << e.what() << std::endl;
+        std::string err = "Connection Failed: " + std::string(e.what());
+        std::println(stderr, "{}", err);
+        return std::unexpected(err);
     }
 }
 
-DatabaseManager& DatabaseManager::getInstance() {
-    static DatabaseManager instance;
-    return instance;
-}
-
-bool DatabaseManager::connect() {
+std::expected<sql::ResultSet*, std::string> DatabaseManager::executeQuery(std::string_view query) {
     try {
-        std::cout << "[Step 1] Initializing Driver..." << std::endl;
-        sql::mysql::MySQL_Driver *mysql_driver = sql::mysql::get_mysql_driver_instance();
-        
-        if (!mysql_driver) {
-            std::cerr << "Could not get MySQL driver instance." << std::endl;
-            return false;
-        }
+        if (!con || con->isClosed()) return std::unexpected("Connection lost.");
 
-        std::cout << "[Step 2] Connecting..." << std::endl;
-        // Use a raw pointer first to test
-        sql::Connection* rawCon = mysql_driver->connect("tcp://127.0.0.1:3306", "root", "Testing184");
-        
-        if (!rawCon) {
-            std::cerr << "Connection failed!" << std::endl;
-            return false;
-        }
-
-        con.reset(rawCon);
-        con->setSchema("clothing_rental");
-
-        std::cout << "Successfully connected!" << std::endl;
-        return true;
-    } catch (sql::SQLException &e) {
-        std::cerr << "MySQL Error: " << e.what() << " (Code: " << e.getErrorCode() << ")" << std::endl;
-        return false;
+        std::unique_ptr<sql::Statement> stmt(con->createStatement());
+        // Caller must manage the lifetime of the returned ResultSet
+        return stmt->executeQuery(std::string(query));
+    } catch (sql::SQLException& e) {
+        return std::unexpected("Query Error: " + std::string(e.what()));
     }
 }
 
-sql::Connection* DatabaseManager::getConnection() {
-    return con.get();
+std::expected<int, std::string> DatabaseManager::executeUpdate(std::string_view query) {
+    try {
+        if (!con || con->isClosed()) return std::unexpected("Connection lost.");
+
+        std::unique_ptr<sql::Statement> stmt(con->createStatement());
+        return stmt->executeUpdate(std::string(query));
+    } catch (sql::SQLException& e) {
+        return std::unexpected("Update Error: " + std::string(e.what()));
+    }
 }
+
+} // namespace database
