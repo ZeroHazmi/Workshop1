@@ -19,6 +19,7 @@ set(SOURCES
 	src/main.cpp
 	src/identity/Users/Users.cpp
 	src/identity/Profile/Profile.cpp
+	src/identity/Auth/Auth.cpp
 	src/inventory/Shops/Shops.cpp
 	src/inventory/Apparel/Apparel.cpp
 	src/transaction/Rental_Details/Rental_Details.cpp
@@ -34,6 +35,7 @@ add_executable(fwcrs ${SOURCES})
 
 # Include directories for headers
 target_include_directories(fwcrs PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${CMAKE_CURRENT_SOURCE_DIR}/tool
 )

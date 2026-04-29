@@ -1,7 +1,15 @@
+#include <print>
+#include <string>
+#include <string_view>
+#include <expected>
+#include <thread>
+#include <chrono>
 #include <iostream>
 #include "DatabaseManager/DatabaseManager.h"
 
 using namespace std;
+
+
 
 int main() {
 	cout << "FWCRS starting..." << std::endl;
