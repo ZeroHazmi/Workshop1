@@ -136,4 +136,12 @@ namespace identity::authui {
         std::cin.ignore(10000, '\n');
     }
 
+    void showAdminDashboard(const ::identity::auth::UserSession& session) {
+        // Delegate to admin UI
+    }
+
+    void handleAdminDashboard(const ::identity::auth::UserSession& session) {
+        // Delegate to admin UI - imported and called from main.cpp
+    }
+
 }

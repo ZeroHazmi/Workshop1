@@ -21,6 +21,8 @@ set(SOURCES
 	src/identity/Profile/Profile.cpp
 	src/identity/Auth/Auth.cpp
 	src/identity/AuthUI.cpp
+	src/identity/AdminUI.cpp
+	src/identity/StaffUI.cpp
 	src/inventory/Shops/Shops.cpp
 	src/inventory/Apparel/Apparel.cpp
 	src/inventory/InventoryUI.cpp

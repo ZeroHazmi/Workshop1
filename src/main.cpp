@@ -9,6 +9,8 @@
 #include "DatabaseManager/DatabaseManager.h"
 #include "identity/Auth/Auth.h"
 #include "identity/AuthUI.h"
+#include "identity/AdminUI.h"
+#include "identity/StaffUI.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
 
@@ -50,7 +52,18 @@ int main() {
                 auto sessionResult = authService.handleLoginFlow();
                 if (sessionResult) {
                     auto& session = sessionResult.value();
-                    ::identity::authui::handleCustomerDashboard(session);
+                    
+                    // Route to appropriate dashboard based on role
+                    std::string role = session.roles.front();
+                    
+                    if (role == "admin") {
+                        ::identity::adminui::handleAdminDashboard(session);
+                    } else if (role == "staff") {
+                        ::identity::staffui::handleStaffDashboard(session);
+                    } else {
+                        // Default to customer dashboard
+                        ::identity::authui::handleCustomerDashboard(session);
+                    }
                 }
                 break;
             }
