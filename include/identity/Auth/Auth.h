@@ -22,7 +22,7 @@ public:
 
     static std::string getMaskedPassword();
     static std::expected<UserSession, std::string> handleLoginFlow();
-    static void handleRegisterFlow();
+    static void handleRegisterFlow(std::string_view role = "customer");
 
     // Login user with credentials
     static std::expected<UserSession, std::string> loginUser(
@@ -30,13 +30,10 @@ public:
         std::string_view password
     );
 
-    // Register new user (default role: customer)
+    // Register new user (creates user account only, profile created separately)
     static std::expected<int, std::string> registerUser(
         std::string_view username,
         std::string_view password,
-        std::string_view fullname,
-        std::string_view email,
-        std::string_view phone,
         std::string_view role = "customer"
     );
 

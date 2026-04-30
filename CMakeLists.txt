@@ -20,6 +20,8 @@ set(SOURCES
 	src/identity/Users/Users.cpp
 	src/identity/Profile/Profile.cpp
 	src/identity/Auth/Auth.cpp
+	src/identity/Customer/Customer.cpp
+	src/identity/Staff/Staff.cpp
 	src/identity/AuthUI.cpp
 	src/identity/AdminUI.cpp
 	src/identity/StaffUI.cpp

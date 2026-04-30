@@ -90,35 +90,12 @@ namespace identity::adminui {
     }
 
     void registerStaffAccount() {
+        tool::helper::clearScreen();
         tool::ui::displayTitle("REGISTER STAFF ACCOUNT", 50);
         println("");
 
-        string staffUsername, staffPassword, staffName, staffEmail, staffPhone;
-        int shopId;
-
-        print("  Staff Username: ");
-        cin >> staffUsername;
-        
-        print("  Staff Password: ");
-        // TODO: Use masked password input like in Auth.cpp
-        cin >> staffPassword;
-        
-        cin.ignore(1000, '\n');
-        print("  Full Name: ");
-        getline(cin, staffName);
-        
-        print("  Email: ");
-        cin >> staffEmail;
-        
-        print("  Phone: ");
-        cin >> staffPhone;
-        
-        print("  Shop ID to assign: ");
-        cin >> shopId;
-        cin.ignore(1000, '\n');
-
-        // TODO: Call database function to insert staff account
-        println("\n  Staff account registered successfully!");
+        // Use the new registration flow with staff role
+        ::identity::auth::Auth::handleRegisterFlow("staff");
         
         println("\nPress Enter to return to dashboard...");
         cin.ignore(10000, '\n');

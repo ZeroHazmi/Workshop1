@@ -70,7 +70,7 @@ int main() {
                 
             case 2:
                 // handleRegisterFlow handles all registration inputs and DB logic
-                authService.handleRegisterFlow();
+                authService.handleRegisterFlow("customer");
                 break;
             case 3:
                 println("Shutting down FWCRS. Goodbye.");

@@ -1,4 +1,6 @@
 #include "identity/Auth/Auth.h"
+#include "identity/Customer/Customer.h"
+#include "identity/Staff/Staff.h"
 #include "DatabaseManager/DatabaseManager.h"
 #include <print>
 #include <thread>
@@ -45,28 +47,93 @@ namespace identity::auth {
     }
 
     // This handles the user interaction for Registration
-    void Auth::handleRegisterFlow() {
-        std::string user, pass, name, email, phone;
+    void Auth::handleRegisterFlow(std::string_view role) {
+        std::string user, pass;
         
-        std::println("\n--- NEW CUSTOMER REGISTRATION ---");
-        std::print("Username: "); std::cin >> user;
+        std::println("\n--- NEW USER REGISTRATION ---");
+        std::print("Username: "); 
+        std::cin >> user;
         std::print("Password: ");
         pass = getMaskedPassword();
-        
-        // Clear buffer and get full name
-        std::print("Full Name: ");
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        std::getline(std::cin, name);
-        
-        std::print("Email: "); std::cin >> email;
-        std::print("Phone: "); std::cin >> phone;
 
-        auto result = registerUser(user, pass, name, email, phone);
+        // Register user account with specified role
+        auto userResult = registerUser(user, pass, role);
+        if (!userResult) {
+            std::println("\nRegistration failed: {}", userResult.error());
+            return;
+        }
+
+        int userId = userResult.value();
+
+        // Query database to get the user's actual role
+        std::string roleQuery = "SELECT roles FROM USERS WHERE user_id = " + std::to_string(userId) + ";";
+        auto roleResult = database::DatabaseManager::getInstance().executeQuery(roleQuery);
         
-        if (result) {
-            std::println("\nRegistration successful! You can now login.");
-        } else {
-            std::println("\nRegistration failed: {}", result.error());
+        if (!roleResult) {
+            std::println("\nError retrieving user role: {}", roleResult.error());
+            return;
+        }
+
+        sql::ResultSet* rs = roleResult.value();
+        std::string userRole = "customer"; // Default role
+        
+        if (rs->next()) {
+            userRole = rs->getString("roles");
+        }
+        delete rs;
+
+        // Based on role, collect appropriate profile information and create profile
+        if (userRole == "customer") {
+            std::string fullname, email, phone;
+            
+            std::print("Full Name: ");
+            std::getline(std::cin, fullname);
+            
+            std::print("Email: ");
+            std::cin >> email;
+            
+            std::print("Phone: ");
+            std::cin >> phone;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+            // Create customer profile
+            auto profileResult = identity::customer::createCustomerProfile(userId, fullname, email, phone);
+            
+            if (profileResult) {
+                std::println("\nCustomer registration successful! You can now login.");
+            } else {
+                std::println("\nProfile creation failed: {}", profileResult.error());
+            }
+        } 
+        else if (userRole == "staff") {
+            std::string staffName, position, phone;
+            int shopId;
+            
+            std::print("Full Name: ");
+            std::getline(std::cin, staffName);
+            
+            std::print("Position: ");
+            std::getline(std::cin, position);
+            
+            std::print("Phone: ");
+            std::cin >> phone;
+            
+            std::print("Shop ID: ");
+            std::cin >> shopId;
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+            // Create staff profile
+            auto profileResult = identity::staff::createStaffProfile(userId, shopId, staffName, position, phone);
+            
+            if (profileResult) {
+                std::println("\nStaff registration successful! You can now login.");
+            } else {
+                std::println("\nProfile creation failed: {}", profileResult.error());
+            }
+        }
+        else {
+            std::println("\nUnknown role: {}. Please contact administrator.", userRole);
         }
     }
 
@@ -131,20 +198,17 @@ namespace identity::auth {
     std::expected<int, std::string> Auth::registerUser(
         std::string_view username,
         std::string_view password,
-        std::string_view fullname,
-        std::string_view email,
-        std::string_view phone,
         std::string_view role
     ) {
-        if (username.empty() || password.empty() || fullname.empty()) {
-            return std::unexpected("Username, password, and fullname are required.");
+        if (username.empty() || password.empty()) {
+            return std::unexpected("Username and password are required.");
         }
 
         if (!validatePassword(password)) {
             return std::unexpected("Password must be at least 6 characters.");
         }
 
-        // First, check if username already exists
+        // Check if username already exists
         std::string checkQuery = "SELECT user_id FROM USERS WHERE username = '" 
                                 + std::string(username) + "';";
         auto checkResult = database::DatabaseManager::getInstance().executeQuery(checkQuery);
@@ -157,7 +221,7 @@ namespace identity::auth {
             delete checkResult.value();
         }
 
-        // Insert new user with role "customer"
+        // Insert new user with specified role
         std::string insertQuery = 
             "INSERT INTO USERS (username, password, roles) VALUES ('" +
             std::string(username) + "', '" +
@@ -181,23 +245,8 @@ namespace identity::auth {
         sql::ResultSet* rs = selectResult.value();
         if (rs->next()) {
             int newUserId = rs->getInt("user_id");
-
-            // Insert corresponding CUSTOMER record
-            std::string customerQuery =
-                "INSERT INTO CUSTOMERS (user_id, fullname, email, phone_no) VALUES (" +
-                std::to_string(newUserId) + ", '" +
-                std::string(fullname) + "', '" +
-                std::string(email) + "', '" +
-                std::string(phone) + "');";
-
-            auto customerResult = database::DatabaseManager::getInstance().executeUpdate(customerQuery);
             delete rs;
-
-            if (customerResult) {
-                return newUserId;
-            } else {
-                return std::unexpected(customerResult.error());
-            }
+            return newUserId;
         } else {
             delete rs;
             return std::unexpected("Failed to retrieve new user ID.");

@@ -1,4 +1,6 @@
 #include "identity/Auth/Auth.h"
+#include "identity/AdminUI.h"
+#include "identity/StaffUI.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
 #include "inventory/InventoryUI.h"
@@ -138,10 +140,12 @@ namespace identity::authui {
 
     void showAdminDashboard(const ::identity::auth::UserSession& session) {
         // Delegate to admin UI
+        ::identity::adminui::showAdminDashboard(session);
     }
 
     void handleAdminDashboard(const ::identity::auth::UserSession& session) {
-        // Delegate to admin UI - imported and called from main.cpp
+        // Delegate to admin UI
+        ::identity::adminui::handleAdminDashboard(session);
     }
 
 }
