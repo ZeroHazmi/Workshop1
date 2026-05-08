@@ -66,12 +66,12 @@ namespace identity::authui {
             showCustomerDashboard(session);
             
             int subChoice;
-            if (!(std::cin >> subChoice)) {
-                std::cin.clear();
-                std::cin.ignore(1000, '\n');
+            if (!(cin >> subChoice)) {
+                cin.clear();
+                cin.ignore(1000, '\n');
                 continue;
             }
-            std::cin.ignore(1000, '\n');  // Clear the input buffer after reading choice
+            cin.ignore(1000, '\n');  // Clear the input buffer after reading choice
 
             switch (subChoice) {
                 case 1: 
@@ -90,7 +90,7 @@ namespace identity::authui {
                     manageBankAccount(session);
                     break;
                 case 0:
-                    std::println("\nLogging out...");
+                    println("\nLogging out...");
                     inDashboard = false;
 
                     for (int i = 0; i < 3; ++i) {
@@ -103,39 +103,39 @@ namespace identity::authui {
 
                     break;
                 default:
-                    std::println("Invalid option.");
+                    println("Invalid option.");
             }
         }
     }
 
     void viewProfile(const ::identity::auth::UserSession& session) {
         tool::ui::displayTitle("USER PROFILE", 50);
-        std::println(""); // Spacer
+        println(""); // Spacer
 
         tool::ui::printField("Full Name", "Zal Hazmi");
         tool::ui::printField("Email", "zero@utem.edu.my");
         tool::ui::printField("Phone", "+6012-3456789");
         
-        std::println("");
+        println("");
         tool::helper::drawLine(50, '-');
-        std::println("\nPress Enter to return to dashboard...");
-        std::cin.ignore(10000, '\n');
+        println("\nPress Enter to return to dashboard...");
+        cin.ignore(10000, '\n');
     }
 
     void manageBankAccount(const ::identity::auth::UserSession& session) {
         tool::helper::clearScreen();
         tool::ui::displayTitle("BANK ACCOUNT DETAILS", 50);
-        std::println(""); // Spacer
+        println(""); // Spacer
 
         tool::ui::printField("Account Holder", "Zal Hazmi");
         tool::ui::printField("Bank Name", "Maybank");
         tool::ui::printField("Account Number", "***** ***** ***** 5678");
         tool::ui::printField("Account Type", "Savings");
         
-        std::println("");
+        println("");
         tool::helper::drawLine(50, '-');
-        std::println("\nPress Enter to return to dashboard...");
-        std::cin.ignore(10000, '\n');
+        println("\nPress Enter to return to dashboard...");
+        cin.ignore(10000, '\n');
     }
 
     void showAdminDashboard(const ::identity::auth::UserSession& session) {

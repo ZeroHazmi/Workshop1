@@ -8,75 +8,77 @@
 #include <iostream>
 #include <conio.h>
 
+using namespace std;
+
 namespace identity::auth {
 
-    std::string Auth::getMaskedPassword() {
-        std::string password;
+    string Auth::getMaskedPassword() {
+        string password;
         char ch;
         
         while ((ch = _getch()) != '\r') { // '\r' is the Enter key in conio
             if (ch == '\b') { // Handle Backspace
                 if (!password.empty()) {
                     password.pop_back();
-                    std::print("\b \b"); // Move cursor back, overwrite with space, move back again
+                    print("\b \b"); // Move cursor back, overwrite with space, move back again
                 }
             } else if (ch >= 32 && ch <= 126) { // Printable characters only
                 password += ch;
-                std::print("*");
+                print("*");
             }
         }
-        std::println(""); // Move to next line after Enter
+        println(""); // Move to next line after Enter
         return password;
     }
 
     // This handles the user interaction for Login
-    std::expected<UserSession, std::string> Auth::handleLoginFlow() {
-        std::string user, pass;
+    expected<UserSession, string> Auth::handleLoginFlow() {
+        string user, pass;
         
-        std::println("\n--- USER LOGIN ---");
-        std::print("Username: ");
-        std::cin >> user;
-        std::print("Password: ");
+        println("\n--- USER LOGIN ---");
+        print("Username: ");
+        cin >> user;
+        print("Password: ");
         pass = getMaskedPassword();
 
         auto result = loginUser(user, pass);
         if (!result) {
-            std::println("\nError: {}", result.error());
+            println("\nError: {}", result.error());
         }
         return result;
     }
 
     // This handles the user interaction for Registration
-    void Auth::handleRegisterFlow(std::string_view role) {
-        std::string user, pass;
+    void Auth::handleRegisterFlow(string_view role) {
+        string user, pass;
         
-        std::println("\n--- NEW USER REGISTRATION ---");
-        std::print("Username: "); 
-        std::cin >> user;
-        std::print("Password: ");
+        println("\n--- NEW USER REGISTRATION ---");
+        print("Username: "); 
+        cin >> user;
+        print("Password: ");
         pass = getMaskedPassword();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
         // Register user account with specified role
         auto userResult = registerUser(user, pass, role);
         if (!userResult) {
-            std::println("\nRegistration failed: {}", userResult.error());
+            println("\nRegistration failed: {}", userResult.error());
             return;
         }
 
         int userId = userResult.value();
 
         // Query database to get the user's actual role
-        std::string roleQuery = "SELECT roles FROM USERS WHERE user_id = " + std::to_string(userId) + ";";
+        string roleQuery = "SELECT roles FROM USERS WHERE user_id = " + to_string(userId) + ";";
         auto roleResult = database::DatabaseManager::getInstance().executeQuery(roleQuery);
         
         if (!roleResult) {
-            std::println("\nError retrieving user role: {}", roleResult.error());
+            println("\nError retrieving user role: {}", roleResult.error());
             return;
         }
 
         sql::ResultSet* rs = roleResult.value();
-        std::string userRole = "customer"; // Default role
+        string userRole = "customer"; // Default role
         
         if (rs->next()) {
             userRole = rs->getString("roles");
@@ -85,90 +87,90 @@ namespace identity::auth {
 
         // Based on role, collect appropriate profile information and create profile
         if (userRole == "customer") {
-            std::string fullname, email, phone;
+            string fullname, email, phone;
             
-            std::print("Full Name: ");
-            std::getline(std::cin, fullname);
+            print("Full Name: ");
+            getline(cin, fullname);
             
-            std::print("Email: ");
-            std::cin >> email;
+            print("Email: ");
+            cin >> email;
             
-            std::print("Phone: ");
-            std::cin >> phone;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            print("Phone: ");
+            cin >> phone;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             // Create customer profile
-            auto profileResult = identity::customer::createCustomerProfile(userId, fullname, email, phone);
+            auto profileResult = ::identity::customer::createCustomerProfile(userId, fullname, email, phone);
             
             if (profileResult) {
-                std::println("\nCustomer registration successful! You can now login.");
+                println("\nCustomer registration successful! You can now login.");
             } else {
-                std::println("\nProfile creation failed: {}", profileResult.error());
+                println("\nProfile creation failed: {}", profileResult.error());
             }
         } 
         else if (userRole == "staff") {
-            std::string staffName, position, phone;
+            string staffName, position, phone;
             int shopId;
             
-            std::print("Full Name: ");
-            std::getline(std::cin, staffName);
+            print("Full Name: ");
+            getline(cin, staffName);
             
-            std::print("Position: ");
-            std::getline(std::cin, position);
+            print("Position: ");
+            getline(cin, position);
             
-            std::print("Phone: ");
-            std::cin >> phone;
+            print("Phone: ");
+            cin >> phone;
             
-            std::print("Shop ID: ");
-            std::cin >> shopId;
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            print("Shop ID: ");
+            cin >> shopId;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
             // Create staff profile
-            auto profileResult = identity::staff::createStaffProfile(userId, shopId, staffName, position, phone);
+            auto profileResult = ::identity::staff::createStaffProfile(userId, shopId, staffName, position, phone);
             
             if (profileResult) {
-                std::println("\nStaff registration successful! You can now login.");
+                println("\nStaff registration successful! You can now login.");
             } else {
-                std::println("\nProfile creation failed: {}", profileResult.error());
+                println("\nProfile creation failed: {}", profileResult.error());
             }
         }
         else {
-            std::println("\nUnknown role: {}. Please contact administrator.", userRole);
+            println("\nUnknown role: {}. Please contact administrator.", userRole);
         }
     }
 
-    bool Auth::validatePassword(std::string_view password) {
+    bool Auth::validatePassword(string_view password) {
         // Basic password validation: at least 6 characters
         return password.length() >= 6;
     }
 
-    std::expected<UserSession, std::string> Auth::loginUser(
-        std::string_view username,
-        std::string_view password
+    expected<UserSession, string> Auth::loginUser(
+        string_view username,
+        string_view password
     ) {
         if (username.empty() || password.empty()) {
-            return std::unexpected("Username and password cannot be empty.");
+            return unexpected("Username and password cannot be empty.");
         }
 
         // Query: SELECT user_id, username, password, roles FROM USERS WHERE username = ?
-        std::string query = "SELECT user_id, username, password, roles FROM USERS WHERE username = '" 
-                        + std::string(username) + "';";
+        string query = "SELECT user_id, username, password, roles FROM USERS WHERE username = '" 
+                        + string(username) + "';";
 
         auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
         if (!result) {
-            return std::unexpected(result.error());
+            return unexpected(result.error());
         }
 
         sql::ResultSet* rs = result.value();
 
         if (rs->next()) {
-            std::string storedPassword = rs->getString("password");
+            string storedPassword = rs->getString("password");
             int userid = rs->getInt("user_id");
-            std::string rolesStr = rs->getString("roles");
+            string rolesStr = rs->getString("roles");
 
             // Simple password validation (in production, use hashing!)
-            if (storedPassword == std::string(password)) {
+            if (storedPassword == string(password)) {
                 UserSession session;
                 session.userid = userid;
                 session.username = username;
@@ -176,7 +178,7 @@ namespace identity::auth {
                 // Parse roles (comma-separated)
                 if (!rolesStr.empty()) {
                     size_t pos = 0;
-                    while ((pos = rolesStr.find(',')) != std::string::npos) {
+                    while ((pos = rolesStr.find(',')) != string::npos) {
                         session.roles.push_back(rolesStr.substr(0, pos));
                         rolesStr.erase(0, pos + 1);
                     }
@@ -187,59 +189,59 @@ namespace identity::auth {
                 return session;
             } else {
                 delete rs;
-                return std::unexpected("Invalid password.");
+                return unexpected("Invalid password.");
             }
         } else {
             delete rs;
-            return std::unexpected("User not found.");
+            return unexpected("User not found.");
         }
     }
 
-    std::expected<int, std::string> Auth::registerUser(
-        std::string_view username,
-        std::string_view password,
-        std::string_view role
+    expected<int, string> Auth::registerUser(
+        string_view username,
+        string_view password,
+        string_view role
     ) {
         if (username.empty() || password.empty()) {
-            return std::unexpected("Username and password are required.");
+            return unexpected("Username and password are required.");
         }
 
         if (!validatePassword(password)) {
-            return std::unexpected("Password must be at least 6 characters.");
+            return unexpected("Password must be at least 6 characters.");
         }
 
         // Check if username already exists
-        std::string checkQuery = "SELECT user_id FROM USERS WHERE username = '" 
-                                + std::string(username) + "';";
+        string checkQuery = "SELECT user_id FROM USERS WHERE username = '" 
+                                + string(username) + "';";
         auto checkResult = database::DatabaseManager::getInstance().executeQuery(checkQuery);
         
         if (checkResult && checkResult.value()->next()) {
             delete checkResult.value();
-            return std::unexpected("Username already exists.");
+            return unexpected("Username already exists.");
         }
         if (checkResult && checkResult.value()) {
             delete checkResult.value();
         }
 
         // Insert new user with specified role
-        std::string insertQuery = 
+        string insertQuery = 
             "INSERT INTO USERS (username, password, roles) VALUES ('" +
-            std::string(username) + "', '" +
-            std::string(password) + "', '" + std::string(role) +"');";
+            string(username) + "', '" +
+            string(password) + "', '" + string(role) +"');";
 
         auto insertResult = database::DatabaseManager::getInstance().executeUpdate(insertQuery);
 
         if (!insertResult) {
-            return std::unexpected(insertResult.error());
+            return unexpected(insertResult.error());
         }
 
         // Query to get the new user_id
-        std::string selectQuery = "SELECT user_id FROM USERS WHERE username = '" 
-                                + std::string(username) + "';";
+        string selectQuery = "SELECT user_id FROM USERS WHERE username = '" 
+                                + string(username) + "';";
         auto selectResult = database::DatabaseManager::getInstance().executeQuery(selectQuery);
 
         if (!selectResult) {
-            return std::unexpected(selectResult.error());
+            return unexpected(selectResult.error());
         }
 
         sql::ResultSet* rs = selectResult.value();
@@ -249,7 +251,7 @@ namespace identity::auth {
             return newUserId;
         } else {
             delete rs;
-            return std::unexpected("Failed to retrieve new user ID.");
+            return unexpected("Failed to retrieve new user ID.");
         }
     }
 

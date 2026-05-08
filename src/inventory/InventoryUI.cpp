@@ -12,7 +12,7 @@ namespace inventory::ui {
     
     void showCatalog() {
     tool::helper::clearScreen();
-    std::vector<int> colWidths = {4, 25, 12, 10};
+    vector<int> colWidths = {4, 25, 12, 10};
     
     tool::ui::displayTitle("APPAREL CATALOG", 65);
     // Header Row
@@ -24,7 +24,7 @@ namespace inventory::ui {
     tool::ui::printRow(colWidths, {"002", "Tuxedo Black (Slim)", "Costume", "RM 60.00"});
     
     tool::helper::drawLine(65, '=');
-    std::println("\nPress Enter to return to dashboard...");
-    std::cin.ignore(10000, '\n');
+    println("\nPress Enter to return to dashboard...");
+    cin.ignore(10000, '\n');
     }
 }

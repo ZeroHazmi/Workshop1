@@ -19,7 +19,7 @@ namespace identity::adminui {
         tool::helper::drawLine(64, '=');
 
         // User Context
-        println("\n  Welcome Admin, {}!", session.username);
+        println("\n  Welcome {}!", session.username);
         println("  Role: {}\n", session.roles.front());
         
         // Admin Menu Options
@@ -91,7 +91,11 @@ namespace identity::adminui {
 
     void registerStaffAccount() {
         tool::helper::clearScreen();
-        tool::ui::displayTitle("REGISTER STAFF ACCOUNT", 50);
+
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("REGISTER STAFF ACCOUNT", 64);
+        tool::helper::drawLine(64, '=');
+
         println("");
 
         // Use the new registration flow with staff role
@@ -102,7 +106,12 @@ namespace identity::adminui {
     }
 
     void manageStaffAccount() {
-        tool::ui::displayTitle("MANAGE STAFF ACCOUNT", 50);
+        tool::helper::clearScreen();
+
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("MANAGE STAFF ACCOUNT", 64);
+        tool::helper::drawLine(64, '=');
+
         println("");
 
         int staffId;
@@ -140,7 +149,11 @@ namespace identity::adminui {
     }
 
     void viewAdminProfile(const ::identity::auth::UserSession& session) {
-        tool::ui::displayTitle("ADMIN PROFILE", 50);
+        tool::helper::clearScreen();
+
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("ADMIN PROFILE", 64);
+        tool::helper::drawLine(64, '=');
         println("");
 
         // TODO: Fetch actual admin data from database
@@ -156,7 +169,12 @@ namespace identity::adminui {
     }
 
     void registerNewShop() {
-        tool::ui::displayTitle("REGISTER NEW SHOP", 50);
+        tool::helper::clearScreen();
+
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("REGISTER NEW SHOP", 64);
+        tool::helper::drawLine(64, '=');
+
         println("");
 
         string shopName, location, manager;
@@ -178,7 +196,12 @@ namespace identity::adminui {
     }
 
     void manageShopInformation() {
-        tool::ui::displayTitle("MANAGE SHOP INFORMATION", 50);
+        tool::helper::clearScreen();
+
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("MANAGE SHOP INFORMATION", 64);
+        tool::helper::drawLine(64, '=');
+
         println("");
 
         int shopId;
@@ -205,6 +228,8 @@ namespace identity::adminui {
     }
 
     void displayShopList() {
+        tool::helper::clearScreen();
+
         tool::ui::displayTitle("SHOP LIST", 65);
         println("");
 
@@ -222,6 +247,8 @@ namespace identity::adminui {
     }
 
     void viewShopInventory() {
+        tool::helper::clearScreen();
+
         tool::ui::displayTitle("SHOP/BRANCH INVENTORY", 65);
         println("");
 

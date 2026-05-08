@@ -3,18 +3,20 @@
 #include <print>
 #include <iostream>
 
+using namespace std;
+
 namespace identity::profile {
 
 // ========== CUSTOMER PROFILE MANAGEMENT ==========
 
-std::expected<CustomerProfile, std::string> Profile::getCustomerProfile(int user_id) {
-	std::string query = "SELECT cust_id, user_id, fullname, email, phone_no FROM CUSTOMERS WHERE user_id = " 
-					   + std::to_string(user_id) + ";";
+expected<CustomerProfile, string> Profile::getCustomerProfile(int user_id) {
+	string query = "SELECT cust_id, user_id, fullname, email, phone_no FROM CUSTOMERS WHERE user_id = " 
+					   + to_string(user_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	sql::ResultSet* rs = result.value();
@@ -31,24 +33,24 @@ std::expected<CustomerProfile, std::string> Profile::getCustomerProfile(int user
 	}
 
 	delete rs;
-	return std::unexpected("Customer profile not found.");
+	return unexpected("Customer profile not found.");
 }
 
-std::expected<bool, std::string> Profile::updateCustomerProfile(
+expected<bool, string> Profile::updateCustomerProfile(
 	int user_id,
-	std::string_view fullname,
-	std::string_view email,
-	std::string_view phone_no
+	string_view fullname,
+	string_view email,
+	string_view phone_no
 ) {
-	std::string query = "UPDATE CUSTOMERS SET fullname = '" + std::string(fullname) + 
-					   "', email = '" + std::string(email) + 
-					   "', phone_no = '" + std::string(phone_no) + 
-					   "' WHERE user_id = " + std::to_string(user_id) + ";";
+	string query = "UPDATE CUSTOMERS SET fullname = '" + string(fullname) + 
+					   "', email = '" + string(email) + 
+					   "', phone_no = '" + string(phone_no) + 
+					   "' WHERE user_id = " + to_string(user_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	return true;
@@ -56,14 +58,14 @@ std::expected<bool, std::string> Profile::updateCustomerProfile(
 
 // ========== STAFF PROFILE MANAGEMENT ==========
 
-std::expected<StaffProfile, std::string> Profile::getStaffProfile(int user_id) {
-	std::string query = "SELECT staff_id, user_id, shop_id, staff_name, position, phone_no FROM STAFF WHERE user_id = " 
-				   + std::to_string(user_id) + ";";
+expected<StaffProfile, string> Profile::getStaffProfile(int user_id) {
+	string query = "SELECT staff_id, user_id, shop_id, staff_name, position, phone_no FROM STAFF WHERE user_id = " 
+				   + to_string(user_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	sql::ResultSet* rs = result.value();
@@ -81,24 +83,24 @@ std::expected<StaffProfile, std::string> Profile::getStaffProfile(int user_id) {
 	}
 
 	delete rs;
-	return std::unexpected("Staff profile not found.");
+	return unexpected("Staff profile not found.");
 }
 
-std::expected<bool, std::string> Profile::updateStaffProfile(
+expected<bool, string> Profile::updateStaffProfile(
 	int staff_id,
-	std::string_view staff_name,
-	std::string_view position,
-	std::string_view phone_no
+	string_view staff_name,
+	string_view position,
+	string_view phone_no
 ) {
-	std::string query = "UPDATE STAFF SET staff_name = '" + std::string(staff_name) + 
-					   "', position = '" + std::string(position) + 
-					   "', phone_no = '" + std::string(phone_no) + 
-					   "' WHERE staff_id = " + std::to_string(staff_id) + ";";
+	string query = "UPDATE STAFF SET staff_name = '" + string(staff_name) + 
+					   "', position = '" + string(position) + 
+					   "', phone_no = '" + string(phone_no) + 
+					   "' WHERE staff_id = " + to_string(staff_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	return true;
@@ -106,14 +108,14 @@ std::expected<bool, std::string> Profile::updateStaffProfile(
 
 // ========== BANK ACCOUNT MANAGEMENT ==========
 
-std::expected<BankAccount, std::string> Profile::getBankAccount(int user_id) {
-	std::string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
-				   + std::to_string(user_id) + " LIMIT 1;";
+expected<BankAccount, string> Profile::getBankAccount(int user_id) {
+	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
+				   + to_string(user_id) + " LIMIT 1;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	sql::ResultSet* rs = result.value();
@@ -130,18 +132,18 @@ std::expected<BankAccount, std::string> Profile::getBankAccount(int user_id) {
 	}
 
 	delete rs;
-	return std::unexpected("Bank account not found.");
+	return unexpected("Bank account not found.");
 }
 
-std::expected<std::vector<BankAccount>, std::string> Profile::getAllBankAccounts(int user_id) {
-	std::vector<BankAccount> accounts;
-	std::string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
-					   + std::to_string(user_id) + ";";
+expected<vector<BankAccount>, string> Profile::getAllBankAccounts(int user_id) {
+	vector<BankAccount> accounts;
+	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
+					   + to_string(user_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	sql::ResultSet* rs = result.value();
@@ -160,36 +162,36 @@ std::expected<std::vector<BankAccount>, std::string> Profile::getAllBankAccounts
 	return accounts;
 }
 
-std::expected<int, std::string> Profile::linkBankAccount(
+expected<int, string> Profile::linkBankAccount(
 	int user_id,
-	std::string_view bank_name,
-	std::string_view acc_number,
-	std::string_view acc_holder
+	string_view bank_name,
+	string_view acc_number,
+	string_view acc_holder
 ) {
 	// Check if account already exists for this user
 	auto existingAccount = getBankAccount(user_id);
 	if (existingAccount) {
-		return std::unexpected("User already has a bank account linked.");
+		return unexpected("User already has a bank account linked.");
 	}
 
-	std::string query = "INSERT INTO BANK_ACCOUNT (user_id, bank_name, acc_number, acc_holder) VALUES (" +
-					   std::to_string(user_id) + ", '" +
-					   std::string(bank_name) + "', '" +
-					   std::string(acc_number) + "', '" +
-					   std::string(acc_holder) + "');";
+	string query = "INSERT INTO BANK_ACCOUNT (user_id, bank_name, acc_number, acc_holder) VALUES (" +
+					   to_string(user_id) + ", '" +
+					   string(bank_name) + "', '" +
+					   string(acc_number) + "', '" +
+					   string(acc_holder) + "');";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	// Retrieve the new account ID
-	std::string selectQuery = "SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + std::to_string(user_id) + ";";
+	string selectQuery = "SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + to_string(user_id) + ";";
 	auto selectResult = database::DatabaseManager::getInstance().executeQuery(selectQuery);
 
 	if (!selectResult) {
-		return std::unexpected(selectResult.error());
+		return unexpected(selectResult.error());
 	}
 
 	sql::ResultSet* rs = selectResult.value();
@@ -200,36 +202,36 @@ std::expected<int, std::string> Profile::linkBankAccount(
 	}
 
 	delete rs;
-	return std::unexpected("Failed to retrieve new account ID.");
+	return unexpected("Failed to retrieve new account ID.");
 }
 
-std::expected<bool, std::string> Profile::updateBankAccount(
+expected<bool, string> Profile::updateBankAccount(
 	int acc_id,
-	std::string_view bank_name,
-	std::string_view acc_number,
-	std::string_view acc_holder
+	string_view bank_name,
+	string_view acc_number,
+	string_view acc_holder
 ) {
-	std::string query = "UPDATE BANK_ACCOUNT SET bank_name = '" + std::string(bank_name) + 
-					   "', acc_number = '" + std::string(acc_number) + 
-					   "', acc_holder = '" + std::string(acc_holder) + 
-					   "' WHERE acc_id = " + std::to_string(acc_id) + ";";
+	string query = "UPDATE BANK_ACCOUNT SET bank_name = '" + string(bank_name) + 
+					   "', acc_number = '" + string(acc_number) + 
+					   "', acc_holder = '" + string(acc_holder) + 
+					   "' WHERE acc_id = " + to_string(acc_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	return true;
 }
 
-std::expected<bool, std::string> Profile::removeBankAccount(int acc_id) {
-	std::string query = "DELETE FROM BANK_ACCOUNT WHERE acc_id = " + std::to_string(acc_id) + ";";
+expected<bool, string> Profile::removeBankAccount(int acc_id) {
+	string query = "DELETE FROM BANK_ACCOUNT WHERE acc_id = " + to_string(acc_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
-		return std::unexpected(result.error());
+		return unexpected(result.error());
 	}
 
 	return true;

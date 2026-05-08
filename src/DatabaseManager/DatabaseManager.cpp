@@ -1,47 +1,50 @@
 #include "DatabaseManager/DatabaseManager.h"
 #include <print>
 
+using namespace sql;
+using namespace std;
+
 namespace database {
 
 DatabaseManager::~DatabaseManager() {
     if (con) con->close();
 }
 
-std::expected<void, std::string> DatabaseManager::connect() {
+expected<void, string> DatabaseManager::connect() {
     try {
         driver = get_driver_instance();
         con.reset(driver->connect(host, user, pass));
         con->setSchema(schema);
         
-        std::println("Successfully connected to database database.");
+        println("Successfully connected to database database.");
         return {}; 
-    } catch (sql::SQLException& e) {
-        std::string err = "Connection Failed: " + std::string(e.what());
-        std::println(stderr, "{}", err);
-        return std::unexpected(err);
+    } catch (SQLException& e) {
+        string err = "Connection Failed: " + string(e.what());
+        println(stderr, "{}", err);
+        return unexpected(err);
     }
 }
 
-std::expected<sql::ResultSet*, std::string> DatabaseManager::executeQuery(std::string_view query) {
+expected<ResultSet*, string> DatabaseManager::executeQuery(string_view query) {
     try {
-        if (!con || con->isClosed()) return std::unexpected("Connection lost.");
+        if (!con || con->isClosed()) return unexpected("Connection lost.");
 
-        std::unique_ptr<sql::Statement> stmt(con->createStatement());
+        unique_ptr<Statement> stmt(con->createStatement());
         // Caller must manage the lifetime of the returned ResultSet
-        return stmt->executeQuery(std::string(query));
-    } catch (sql::SQLException& e) {
-        return std::unexpected("Query Error: " + std::string(e.what()));
+        return stmt->executeQuery(string(query));
+    } catch (SQLException& e) {
+        return unexpected("Query Error: " + string(e.what()));
     }
 }
 
-std::expected<int, std::string> DatabaseManager::executeUpdate(std::string_view query) {
+expected<int, string> DatabaseManager::executeUpdate(string_view query) {
     try {
-        if (!con || con->isClosed()) return std::unexpected("Connection lost.");
+        if (!con || con->isClosed()) return unexpected("Connection lost.");
 
-        std::unique_ptr<sql::Statement> stmt(con->createStatement());
-        return stmt->executeUpdate(std::string(query));
-    } catch (sql::SQLException& e) {
-        return std::unexpected("Update Error: " + std::string(e.what()));
+        unique_ptr<Statement> stmt(con->createStatement());
+        return stmt->executeUpdate(string(query));
+    } catch (SQLException& e) {
+        return unexpected("Update Error: " + string(e.what()));
     }
 }
 

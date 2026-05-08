@@ -45,21 +45,21 @@ namespace tool::ui {
         println("{}", row);
     }
     
-    void printField(std::string_view label, std::string_view value, int labelWidth) {
+    void printField(string_view label, string_view value, int labelWidth) {
         // Manually construct padding for right-aligned label
         string paddedLabel(label);
         if (static_cast<int>(paddedLabel.length()) < labelWidth) {
             paddedLabel.insert(0, labelWidth - paddedLabel.length(), ' ');
         }
-        std::println("  {} : {}", paddedLabel, value);
+        println("  {} : {}", paddedLabel, value);
     }
 
-    void printPrice(std::string_view label, double amount, int width) {
-        std::string priceStr = std::format("RM {:.2f}", amount);
+    void printPrice(string_view label, double amount, int width) {
+        string priceStr = format("RM {:.2f}", amount);
         // Manually construct padding for right-aligned price
         if (static_cast<int>(priceStr.length()) < width) {
             priceStr.insert(0, width - priceStr.length(), ' ');
         }
-        std::println("  {:<15} : {}", label, priceStr);
+        println("  {:<15} : {}", label, priceStr);
     }
 }

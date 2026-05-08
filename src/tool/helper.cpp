@@ -4,6 +4,8 @@
 #include <print>
 #include <string>
 
+using namespace std;
+
 namespace tool::helper {
     // Helper to clear terminal for a professional presentation
     void clearScreen() {
@@ -16,6 +18,6 @@ namespace tool::helper {
 
     // Helper to draw a full line of symbols
     void drawLine(int width, char symbol) {
-        std::println("{}", std::string(width, symbol));
+        println("{}", string(width, symbol));
     }
 }
