@@ -1,21 +1,39 @@
 cmake_minimum_required(VERSION 3.10)
 project(FWCRS VERSION 0.1 LANGUAGES CXX)
 
+set(CMAKE_BUILD_TYPE Release)
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# Set the path to where you extracted the MySQL Connector
+set(MYSQL_CON_DIR "C:/Program Files/MySQL/mysql-connector-c++-9.7.0")
+
+include_directories("${MYSQL_CON_DIR}/include")
+include_directories("${MYSQL_CON_DIR}/include/jdbc")
+link_directories("${MYSQL_CON_DIR}/lib64/vs14")
 
 # Source files
 set(SOURCES
 	src/main.cpp
 	src/identity/Users/Users.cpp
 	src/identity/Profile/Profile.cpp
+	src/identity/Auth/Auth.cpp
+	src/identity/Customer/Customer.cpp
+	src/identity/Staff/Staff.cpp
+	src/identity/AuthUI.cpp
+	src/identity/AdminUI.cpp
+	src/identity/StaffUI.cpp
 	src/inventory/Shops/Shops.cpp
 	src/inventory/Apparel/Apparel.cpp
+	src/inventory/InventoryUI.cpp
 	src/transaction/Rental_Details/Rental_Details.cpp
 	src/transaction/Rental/Rental.cpp
+	src/transaction/RentalUI.cpp
 	src/DatabaseManager/DatabaseManager.cpp
-	tool/tool.cpp
+	src/tool/helper.cpp
+	src/tool/CLIComponents.cpp
 )
 
 include(CTest)
@@ -25,8 +43,19 @@ add_executable(fwcrs ${SOURCES})
 
 # Include directories for headers
 target_include_directories(fwcrs PRIVATE
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${CMAKE_CURRENT_SOURCE_DIR}/src
 	${CMAKE_CURRENT_SOURCE_DIR}/tool
+)
+
+target_link_libraries(fwcrs PRIVATE mysqlcppconn)
+
+add_custom_command(TARGET fwcrs POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${MYSQL_CON_DIR}/lib64/mysqlcppconn-10-vs14.dll"
+    "${MYSQL_CON_DIR}/lib64/libcrypto-3-x64.dll"
+    "${MYSQL_CON_DIR}/lib64/libssl-3-x64.dll"
+    $<TARGET_FILE_DIR:fwcrs>
 )
 
 message(STATUS "Configured FWCRS project with ${CMAKE_CXX_STANDARD} standard")
