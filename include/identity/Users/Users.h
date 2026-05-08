@@ -71,8 +71,8 @@ public:
 	);
 
 	// DELETE: Remove user (Admin operation)
-	static std::expected<bool, std::string> deleteUser(int user_id);
-
+	static std::expected<bool, std::string> deleteUser(int user_id, std::string roles);
+	
 	// Helper: Display all users in table format
 	static void displayAllUsers();
 

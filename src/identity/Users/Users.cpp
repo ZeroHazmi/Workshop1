@@ -200,32 +200,35 @@ expected<bool, string> Users::updateUserRoles(
 	return true;
 }
 
-// expected<bool, string> Users::deleteUser(int user_id) {
-//     auto& db = database::DatabaseManager::getInstance();
-//     string idStr = to_string(user_id);
+expected<bool, string> Users::deleteUser(int user_id, string roles) {
+    auto& db = database::DatabaseManager::getInstance();
+    string idStr = to_string(user_id);
 
-//     // 1. Delete from CUSTOMERS
-//     auto res1 = db.executeUpdate("DELETE FROM CUSTOMERS WHERE user_id = " + idStr + ";");
-//     if (!res1) return unexpected(res1.error());
-//     (void)res1; // Explicitly tell the compiler we are done with res1
+	// 1. Set is_delete to 1 for the user in USERS table (soft delete)
+	auto resSoftDelete = db.executeUpdate("UPDATE USERS SET is_deleted = 1 WHERE user_id = " + idStr + ";");
+	if (!resSoftDelete) return unexpected(resSoftDelete.error());
+	(void)resSoftDelete; // Mark as used to avoid unused variable warning
 
-//     // 2. Delete from STAFF
-//     auto res2 = db.executeUpdate("DELETE FROM STAFF WHERE user_id = " + idStr + ";");
-//     if (!res2) return unexpected(res2.error());
-//     (void)res2;
+	if (roles.find("staff") != string::npos) {
+		auto resStaffSoftDelete = db.executeUpdate("UPDATE STAFF SET is_deleted = 1 WHERE user_id = " + idStr + ";");
+		if (!resStaffSoftDelete) return unexpected(resStaffSoftDelete.error());
+	}
+	else if (roles.find("customer") != string::npos) {
+		auto resCustomerSoftDelete = db.executeUpdate("UPDATE CUSTOMERS SET is_deleted = 1 WHERE user_id = " + idStr + ";");
+		if (!resCustomerSoftDelete) return unexpected(resCustomerSoftDelete.error());
+	}
 
-//     // 3. Delete from BANK_ACCOUNT
-//     auto res3 = db.executeUpdate("DELETE FROM BANK_ACCOUNT WHERE user_id = " + idStr + ";");
-//     if (!res3) return unexpected(res3.error());
-//     (void)res3;
+	auto checkBankAccoutnResult = db.executeQuery("SELECT account_id FROM BANK_ACCOUNT WHERE user_id = " + idStr + " AND is_deleted = 0;");
+	if (!checkBankAccoutnResult) return unexpected(checkBankAccoutnResult.error());
 
-//     // 4. Delete from USERS
-//     auto res4 = db.executeUpdate("DELETE FROM USERS WHERE user_id = " + idStr + ";");
-//     if (!res4) return unexpected(res4.error());
-//     (void)res4;
+	if(checkBankAccoutnResult.value()->next()) {
+		// 2. Set is_delete to 1 for the user's bank account (soft delete)
+		auto resBankSoftDelete = db.executeUpdate("UPDATE BANK_ACCOUNT SET is_deleted = 1 WHERE user_id = " + idStr + ";");
+		if (!resBankSoftDelete) return unexpected(resBankSoftDelete.error());
+	}
 
-//     return true;
-// }
+    return true;
+}
 
 void Users::displayAllUsers() {
 	auto usersResult = getAllUsers();
