@@ -1,8 +1,8 @@
 #pragma once
-#include "inventory/InventoryUI.h"
 
-using namespace std;
+#include "identity/Auth/Auth.h"
 
 namespace inventory::ui {
     void showCatalog();
+    void registerNewApparel(const ::identity::auth::UserSession& session);
 }
