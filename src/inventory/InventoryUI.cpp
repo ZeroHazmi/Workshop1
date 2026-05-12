@@ -14,29 +14,68 @@ using namespace std;
 namespace inventory::ui {
 
 void showCatalog() {
-  tool::helper::clearScreen();
-  vector<int> colWidths = {4, 25, 12, 10};
+  bool inCatalog = true;
+  string searchTerm = "";
+  int currentPage = 1;
+  const int itemsPerPage = 25;
 
-  tool::ui::displayTitle("APPAREL CATALOG", 65);
-  // Header Row
-  tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "CATEGORY", "PRICE/DAY"});
-  tool::helper::drawLine(65, '-');
+  while (inCatalog) {
+    tool::helper::clearScreen();
+    tool::ui::displayTitle("APPAREL CATALOG", 75);
+    println("");
 
-  // Data Rows (Fetch from Database)
-  auto result = inventory::apparel::getAllApparel();
-  if (result) {
-    for (const auto &item : result.value()) {
-      tool::ui::printRow(colWidths,
-                         {to_string(item.apparel_id), item.description,
-                          item.category, format("RM {:.2f}", item.daily_rate)});
+    vector<int> colWidths = {4, 25, 12, 12, 10};
+
+    // Header Row
+    tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "CATEGORY", "PRICE/DAY", "AVAILABLE"});
+    tool::helper::drawLine(75, '-');
+
+    // Data Rows (Fetch from Database)
+    auto result = inventory::apparel::getCatalogDisplay(searchTerm);
+    if (result) {
+      const auto& allItems = result.value();
+      int totalItems = allItems.size();
+      int totalPages = totalItems == 0 ? 1 : (totalItems + itemsPerPage - 1) / itemsPerPage;
+      
+      // Bound checking for currentPage
+      if (currentPage > totalPages) currentPage = totalPages;
+      if (currentPage < 1) currentPage = 1;
+
+      int startIndex = (currentPage - 1) * itemsPerPage;
+      int endIndex = std::min(startIndex + itemsPerPage, totalItems);
+
+      for (int i = startIndex; i < endIndex; ++i) {
+        const auto &item = allItems[i];
+        tool::ui::printRow(colWidths,
+                           {to_string(item.catalog_id), item.description,
+                            item.category, format("RM {:.2f}", item.daily_rate), to_string(item.available_stock)});
+      }
+
+      tool::helper::drawLine(75, '-');
+      println("  Page {} of {} | Total Items: {}", currentPage, totalPages, totalItems);
+    } else {
+      println("  Error fetching catalog: {}", result.error());
     }
-  } else {
-    println("  Error fetching catalog: {}", result.error());
-  }
 
-  tool::helper::drawLine(65, '=');
-  println("\nPress Enter to return to dashboard...");
-  cin.ignore(10000, '\n');
+    tool::helper::drawLine(75, '=');
+    println("");
+    
+    print("  [n] Next, [p] Prev, [0] Exit, or type to search: ");
+    
+    string input;
+    getline(cin, input);
+
+    if (input == "0") {
+      inCatalog = false;
+    } else if (input == "n" || input == "N") {
+      currentPage++;
+    } else if (input == "p" || input == "P") {
+      currentPage--;
+    } else {
+      searchTerm = input;
+      currentPage = 1;
+    }
+  }
 }
 
 void registerNewApparel(const ::identity::auth::UserSession &session) {
@@ -60,8 +99,9 @@ void registerNewApparel(const ::identity::auth::UserSession &session) {
   double daily_rate;
   int total_stock;
 
-  print("  Apparel Name (Description): ");
+  print("  Apparel Name/Description (or '0' to cancel): ");
   getline(cin, description);
+  if (description == "0" || description == "cancel") return;
 
   print("  Category: ");
   getline(cin, category);
@@ -92,21 +132,17 @@ void registerNewApparel(const ::identity::auth::UserSession &session) {
   print("  Condition Status (e.g. Excellent): ");
   getline(cin, condition_status);
 
-  ApparelItem newItem;
-  newItem.shop_id = shop_id;
-  newItem.description = description;
-  newItem.category = category;
-  newItem.daily_rate = daily_rate;
-  newItem.condition_status = condition_status;
-  newItem.status = "Available"; // Default status
-  newItem.size = size;
-  newItem.colour = colour;
-  newItem.total_stock = total_stock;
-  newItem.available_stock = total_stock; // Set available_stock to same value as total_stock
+  ApparelCatalog newCatalog;
+  newCatalog.shop_id = shop_id;
+  newCatalog.description = description;
+  newCatalog.category = category;
+  newCatalog.daily_rate = daily_rate;
+  newCatalog.size = size;
+  newCatalog.colour = colour;
 
-  auto insertResult = inventory::apparel::addApparel(newItem);
+  auto insertResult = inventory::apparel::addApparelCatalog(newCatalog, total_stock, condition_status);
   if (insertResult) {
-    println("\n  Apparel registered successfully!");
+    println("\n  Apparel registered successfully with {} items created!", total_stock);
   } else {
     println("\n  Failed to register apparel: {}", insertResult.error());
   }
