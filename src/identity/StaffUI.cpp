@@ -82,7 +82,9 @@ void handleStaffDashboard(const ::identity::auth::UserSession &session) {
 
 static void updateConditionFlow() {
   tool::helper::clearScreen();
-  tool::ui::displayTitle("UPDATE APPAREL CONDITION", 50);
+  tool::helper::drawLine(64, '=');
+  tool::ui::displayTitle("UPDATE APPAREL CONDITION", 64);
+  tool::helper::drawLine(64, '=');
   println("");
 
   int itemId;
@@ -132,7 +134,9 @@ static void updateConditionFlow() {
 
 static void processLaundryFlow() {
   tool::helper::clearScreen();
-  tool::ui::displayTitle("PROCESS LAUNDRY", 50);
+  tool::helper::drawLine(64, '=');
+  tool::ui::displayTitle("PROCESS LAUNDRY", 64);
+  tool::helper::drawLine(64, '=');
   println("");
 
   auto result = inventory::apparel::getItemsByStatus("Laundry");
@@ -155,7 +159,7 @@ static void processLaundryFlow() {
   for (const auto& item : items) {
       println("  Item ID: {} | Condition: {}", item.item_id, item.condition_status);
   }
-  tool::helper::drawLine(50, '-');
+  tool::helper::drawLine(64, '-');
 
   int itemId;
   print("  Enter Item ID to mark as washed (0 to cancel): ");
@@ -181,7 +185,9 @@ void manageApparelInventory(const ::identity::auth::UserSession &session) {
   bool inInventoryMenu = true;
   while (inInventoryMenu) {
     tool::helper::clearScreen();
-    tool::ui::displayTitle("INVENTORY MANAGEMENT", 50);
+    tool::helper::drawLine(64, '=');
+    tool::ui::displayTitle("INVENTORY MANAGEMENT", 64);
+    tool::helper::drawLine(64, '=');
     println("");
     
     println("  [1] Register/Add New Apparel");
@@ -191,7 +197,7 @@ void manageApparelInventory(const ::identity::auth::UserSession &session) {
     println("  [5] Retire/Remove Damaged Apparel");
     println("  [0] Back to Main Dashboard");
     
-    tool::helper::drawLine(50, '-');
+    tool::helper::drawLine(64, '-');
     print("  Select an option: ");
     
     int choice;
@@ -231,7 +237,10 @@ void manageApparelInventory(const ::identity::auth::UserSession &session) {
 }
 
 void processApparelReturn() {
-  tool::ui::displayTitle("PROCESS APPAREL RETURN", 50);
+  tool::helper::clearScreen();
+  tool::helper::drawLine(64, '=');
+  tool::ui::displayTitle("PROCESS APPAREL RETURN", 64);
+  tool::helper::drawLine(64, '=');
   println("");
 
   int rentalId;
@@ -276,7 +285,11 @@ void processApparelReturn() {
 }
 
 void viewActiveRentals() {
-  tool::ui::displayTitle("ACTIVE & OVERDUE RENTALS", 50);
+  tool::helper::clearScreen();
+  tool::helper::drawLine(64, '=');
+  tool::ui::displayTitle("ACTIVE & OVERDUE RENTALS", 64);
+  tool::helper::drawLine(64, '=');
+
   println("");
   
   // TODO: Fetch active/overdue rentals from database
@@ -287,7 +300,10 @@ void viewActiveRentals() {
 }
 
 void viewStaffProfile(const ::identity::auth::UserSession &session) {
-  tool::ui::displayTitle("STAFF PROFILE", 50);
+  tool::helper::clearScreen();
+  tool::helper::drawLine(64, '=');
+  tool::ui::displayTitle("STAFF PROFILE", 64);
+  tool::helper::drawLine(64, '=');
   println("");
 
   // TODO: Fetch actual staff data from database
@@ -299,7 +315,7 @@ void viewStaffProfile(const ::identity::auth::UserSession &session) {
 
   println("");
   println("  (Note: Contact admin to modify profile information)");
-  tool::helper::drawLine(50, '-');
+  tool::helper::drawLine(64, '-');
 
   println("\nPress Enter to return to dashboard...");
   cin.ignore(10000, '\n');

@@ -21,7 +21,9 @@ void showCatalog() {
 
   while (inCatalog) {
     tool::helper::clearScreen();
+    tool::helper::drawLine(75, '=');
     tool::ui::displayTitle("APPAREL CATALOG", 75);
+    tool::helper::drawLine(75, '=');
     println("");
 
     vector<int> colWidths = {4, 25, 12, 12, 10};
@@ -79,7 +81,10 @@ void showCatalog() {
 }
 
 void registerNewApparel(const ::identity::auth::UserSession &session) {
-  tool::ui::displayTitle("REGISTER NEW APPAREL", 50);
+  tool::helper::clearScreen();
+  tool::helper::drawLine(64, '=');
+  tool::ui::displayTitle("REGISTER NEW APPAREL", 64);
+  tool::helper::drawLine(64, '=');
   println("");
 
   // Get Staff Profile to find shop_id

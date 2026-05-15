@@ -109,7 +109,10 @@ namespace identity::authui {
     }
 
     void viewProfile(const ::identity::auth::UserSession& session) {
-        tool::ui::displayTitle("USER PROFILE", 50);
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("USER PROFILE", 64);
+        tool::helper::drawLine(64, '=');
+
         println(""); // Spacer
 
         tool::ui::printField("Full Name", "Zal Hazmi");
@@ -117,14 +120,17 @@ namespace identity::authui {
         tool::ui::printField("Phone", "+6012-3456789");
         
         println("");
-        tool::helper::drawLine(50, '-');
+        tool::helper::drawLine(64, '-');
         println("\nPress Enter to return to dashboard...");
         cin.ignore(10000, '\n');
     }
 
     void manageBankAccount(const ::identity::auth::UserSession& session) {
         tool::helper::clearScreen();
-        tool::ui::displayTitle("BANK ACCOUNT DETAILS", 50);
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("BANK ACCOUNT DETAILS", 64);
+        tool::helper::drawLine(64, '=');
+        
         println(""); // Spacer
 
         tool::ui::printField("Account Holder", "Zal Hazmi");
@@ -133,7 +139,7 @@ namespace identity::authui {
         tool::ui::printField("Account Type", "Savings");
         
         println("");
-        tool::helper::drawLine(50, '-');
+        tool::helper::drawLine(64, '-');
         println("\nPress Enter to return to dashboard...");
         cin.ignore(10000, '\n');
     }
