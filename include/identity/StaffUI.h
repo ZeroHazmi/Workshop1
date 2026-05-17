@@ -7,8 +7,8 @@ namespace identity::staffui {
     void handleStaffDashboard(const ::identity::auth::UserSession& session);
     
     // Staff menu options
-    void registerNewApparel();
-    void viewRentalApparelList();
-    void modifyRentalDetails();
+    void manageApparelInventory(const ::identity::auth::UserSession& session);
+    void processApparelReturn();
+    void viewActiveRentals();
     void viewStaffProfile(const ::identity::auth::UserSession& session);
 }

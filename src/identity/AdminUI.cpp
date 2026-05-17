@@ -163,7 +163,7 @@ namespace identity::adminui {
         tool::ui::printField("Department", "System Administration");
         
         println("");
-        tool::helper::drawLine(50, '-');
+        tool::helper::drawLine(64, '-');
         println("\nPress Enter to return to dashboard...");
         cin.ignore(10000, '\n');
     }
