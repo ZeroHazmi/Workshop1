@@ -152,9 +152,9 @@ namespace identity::auth {
             return unexpected("Username and password cannot be empty.");
         }
 
-        // Query: SELECT user_id, username, password, roles FROM USERS WHERE username = ?
+        // Query: SELECT user_id, username, password, roles FROM USERS WHERE username = ? AND is_deleted = 0
         string query = "SELECT user_id, username, password, roles FROM USERS WHERE username = '" 
-                        + string(username) + "';";
+                        + string(username) + "' AND is_deleted = 0;";
 
         auto result = database::DatabaseManager::getInstance().executeQuery(query);
 

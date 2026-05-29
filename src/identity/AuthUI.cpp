@@ -4,6 +4,7 @@
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
 #include "inventory/InventoryUI.h"
+#include "identity/Profile/Profile.h"
 #include <print>
 #include <string>
 #include <iostream>
@@ -76,7 +77,7 @@ namespace identity::authui {
             switch (subChoice) {
                 case 1: 
                     // inventory::browseApparel
-                    inventory::ui::showCatalog();
+                    inventory::ui::showCatalog(session);
                     break;
                 case 2: 
                     // transaction::viewHistory(session.userid); 
@@ -109,17 +110,26 @@ namespace identity::authui {
     }
 
     void viewProfile(const ::identity::auth::UserSession& session) {
+        tool::helper::clearScreen();
         tool::ui::displayTitle("USER PROFILE", 50);
         println(""); // Spacer
 
-        tool::ui::printField("Full Name", "Zal Hazmi");
-        tool::ui::printField("Email", "zero@utem.edu.my");
-        tool::ui::printField("Phone", "+6012-3456789");
+        auto profileOpt = ::identity::profile::Profile::getCustomerProfile(session.userid);
+        if (profileOpt) {
+            auto& profile = profileOpt.value();
+            tool::ui::printField("Username", session.username);
+            tool::ui::printField("Full Name", profile.fullname);
+            tool::ui::printField("Email", profile.email);
+            tool::ui::printField("Phone", profile.phone_no);
+        } else {
+            println("  Error: {}", profileOpt.error());
+            println("  (Please ensure your customer profile has been fully set up.)");
+        }
         
         println("");
         tool::helper::drawLine(50, '-');
         println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        cin.get();
     }
 
     void manageBankAccount(const ::identity::auth::UserSession& session) {
@@ -127,15 +137,77 @@ namespace identity::authui {
         tool::ui::displayTitle("BANK ACCOUNT DETAILS", 50);
         println(""); // Spacer
 
-        tool::ui::printField("Account Holder", "Zal Hazmi");
-        tool::ui::printField("Bank Name", "Maybank");
-        tool::ui::printField("Account Number", "***** ***** ***** 5678");
-        tool::ui::printField("Account Type", "Savings");
-        
-        println("");
-        tool::helper::drawLine(50, '-');
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        auto bankOpt = ::identity::profile::Profile::getBankAccount(session.userid);
+        if (bankOpt) {
+            auto& bank = bankOpt.value();
+            tool::ui::printField("Account Holder", bank.acc_holder);
+            tool::ui::printField("Bank Name", bank.bank_name);
+            
+            // Mask account number for security: e.g. show only last 4 digits
+            std::string acc = bank.acc_number;
+            if (acc.length() > 4) {
+                acc = std::string(acc.length() - 4, '*') + acc.substr(acc.length() - 4);
+            }
+            tool::ui::printField("Account Number", acc);
+            
+            println("");
+            tool::helper::drawLine(50, '-');
+            println("\n  [1] Remove Linked Bank Account");
+            println("  [0] Back to Dashboard");
+            print("\n  Enter selection: ");
+            int option;
+            if (cin >> option && option == 1) {
+                cin.ignore(1000, '\n');
+                auto removeRes = ::identity::profile::Profile::removeBankAccount(bank.acc_id);
+                if (removeRes) {
+                    println("\n  Bank account successfully unlinked.");
+                } else {
+                    println("\n  Failed to unlink bank account: {}", removeRes.error());
+                }
+                println("\nPress Enter to return to dashboard...");
+                cin.get();
+                return;
+            } else {
+                cin.clear();
+                cin.ignore(1000, '\n');
+                return;
+            }
+        } else {
+            println("  No bank account linked to your profile yet.");
+            println("\n  [1] Link a Bank Account");
+            println("  [0] Back to Dashboard");
+            print("\n  Enter selection: ");
+            
+            int choice;
+            if (cin >> choice && choice == 1) {
+                cin.ignore(1000, '\n');
+                tool::helper::clearScreen();
+                tool::ui::displayTitle("LINK BANK ACCOUNT", 50);
+                println("");
+                
+                std::string bankName, accNum, holder;
+                print("  Enter Bank Name: ");
+                getline(cin, bankName);
+                print("  Enter Account Number: ");
+                getline(cin, accNum);
+                print("  Enter Account Holder Name: ");
+                getline(cin, holder);
+                
+                auto linkResult = ::identity::profile::Profile::linkBankAccount(session.userid, bankName, accNum, holder);
+                if (linkResult) {
+                    println("\n  Bank account linked successfully!");
+                } else {
+                    println("\n  Failed to link bank account: {}", linkResult.error());
+                }
+                println("\nPress Enter to return to dashboard...");
+                cin.get();
+                return;
+            } else {
+                cin.clear();
+                cin.ignore(1000, '\n');
+                return;
+            }
+        }
     }
 
     void showAdminDashboard(const ::identity::auth::UserSession& session) {

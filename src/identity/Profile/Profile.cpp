@@ -110,7 +110,7 @@ expected<bool, string> Profile::updateStaffProfile(
 
 expected<BankAccount, string> Profile::getBankAccount(int user_id) {
 	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
-				   + to_string(user_id) + " LIMIT 1;";
+				   + to_string(user_id) + " AND is_deleted = 0 LIMIT 1;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -138,7 +138,7 @@ expected<BankAccount, string> Profile::getBankAccount(int user_id) {
 expected<vector<BankAccount>, string> Profile::getAllBankAccounts(int user_id) {
 	vector<BankAccount> accounts;
 	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
-					   + to_string(user_id) + ";";
+					   + to_string(user_id) + " AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -187,7 +187,7 @@ expected<int, string> Profile::linkBankAccount(
 	}
 
 	// Retrieve the new account ID
-	string selectQuery = "SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + to_string(user_id) + ";";
+	string selectQuery = "SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + to_string(user_id) + " AND is_deleted = 0;";
 	auto selectResult = database::DatabaseManager::getInstance().executeQuery(selectQuery);
 
 	if (!selectResult) {
@@ -214,7 +214,7 @@ expected<bool, string> Profile::updateBankAccount(
 	string query = "UPDATE BANK_ACCOUNT SET bank_name = '" + string(bank_name) + 
 					   "', acc_number = '" + string(acc_number) + 
 					   "', acc_holder = '" + string(acc_holder) + 
-					   "' WHERE acc_id = " + to_string(acc_id) + ";";
+					   "' WHERE acc_id = " + to_string(acc_id) + " AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 
@@ -226,7 +226,7 @@ expected<bool, string> Profile::updateBankAccount(
 }
 
 expected<bool, string> Profile::removeBankAccount(int acc_id) {
-	string query = "DELETE FROM BANK_ACCOUNT WHERE acc_id = " + to_string(acc_id) + ";";
+	string query = "UPDATE BANK_ACCOUNT SET is_deleted = 1 WHERE acc_id = " + to_string(acc_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 

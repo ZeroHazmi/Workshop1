@@ -1,6 +1,9 @@
 #include "identity/StaffUI.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "inventory/Apparel/Apparel.h"
+#include "identity/Profile/Profile.h"
+#include "inventory/InventoryUI.h"
 #include <print>
 #include <string>
 #include <iostream>
@@ -24,7 +27,7 @@ namespace identity::staffui {
         
         // Staff Menu Options
         println("  [1] Register/Add New Apparel");
-        println("  [2] View Rental Apparel List");
+        println("  [2] View Apparel Catalog");
         println("  [3] Modify Rental Details");
         println("  [4] View Staff Profile");
         println("  [0] Logout");
@@ -49,10 +52,10 @@ namespace identity::staffui {
 
             switch (choice) {
                 case 1:
-                    registerNewApparel();
+                    registerNewApparel(session);
                     break;
                 case 2:
-                    viewRentalApparelList();
+                    inventory::ui::showCatalog(session);
                     break;
                 case 3:
                     modifyRentalDetails();
@@ -77,78 +80,134 @@ namespace identity::staffui {
         }
     }
 
-    void registerNewApparel() {
+    void registerNewApparel(const ::identity::auth::UserSession& session) {
+        tool::helper::clearScreen();
         tool::ui::displayTitle("REGISTER NEW APPAREL", 50);
         println("");
 
-        string apparelName, category, condition;
-        double rentalPrice;
-        int quantity;
+        auto staffProfileOpt = ::identity::profile::Profile::getStaffProfile(session.userid);
+        if (!staffProfileOpt) {
+            println("  Error: Could not retrieve staff profile.");
+            println("\nPress Enter to return to dashboard...");
+            cin.ignore(10000, '\n');
+            return;
+        }
+        int shop_id = staffProfileOpt.value().shop_id;
 
-        cin.ignore(1000, '\n');
-        print("  Apparel Name: ");
+        string apparelName, category, colour, description;
+        double rentalPrice;
+
+        print("  Apparel Name (or '0' to cancel): ");
         getline(cin, apparelName);
+        if (apparelName == "0" || apparelName == "cancel") return;
+        
+        print("  Description: ");
+        getline(cin, description);
         
         print("  Category: ");
         getline(cin, category);
         
+        print("  Colour: ");
+        getline(cin, colour);
+        
         print("  Rental Price (per day): RM ");
-        cin >> rentalPrice;
-        
-        print("  Quantity: ");
-        cin >> quantity;
-        
+        if (!(cin >> rentalPrice) || rentalPrice < 0) {
+            cin.clear(); cin.ignore(1000, '\n'); return;
+        }
         cin.ignore(1000, '\n');
-        print("  Condition: ");
-        getline(cin, condition);
 
-        // TODO: Call database function to insert apparel
-        println("\n  Apparel registered successfully!");
+        std::vector<inventory::apparel::ItemBatch> batches;
+        bool addingSizes = true;
         
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
-    }
+        while (addingSizes) {
+            println("\n  --- ADD INVENTORY BATCH ---");
+            string size, condition, addAnother;
+            int quantity;
+            
+            print("  Size (e.g. S, M, L): ");
+            getline(cin, size);
+            
+            print("  Quantity: ");
+            if (!(cin >> quantity) || quantity < 0) {
+                cin.clear(); cin.ignore(1000, '\n'); 
+                println("  Invalid quantity. Batch cancelled.");
+                continue;
+            }
+            cin.ignore(1000, '\n');
+            
+            print("  Condition (e.g. Excellent, Good): ");
+            getline(cin, condition);
+            
+            batches.push_back({size, quantity, condition});
+            
+            print("  Do you want to add another size for this apparel? (Y/N): ");
+            getline(cin, addAnother);
+            
+            if (addAnother != "Y" && addAnother != "y") {
+                addingSizes = false;
+            }
+        }
 
-    void viewRentalApparelList() {
-        tool::ui::displayTitle("RENTAL APPAREL LIST", 80);
-        println("");
+        if (batches.empty()) {
+            println("\n  Registration cancelled: No inventory batches added.");
+            println("\nPress Enter to return to dashboard...");
+            cin.ignore(10000, '\n');
+            return;
+        }
 
-        vector<int> colWidths = {4, 20, 12, 12, 15, 10};
-        tool::ui::printRow(colWidths, {"ID", "APPAREL NAME", "CUSTOMER", "DEPOSIT PAID", "RETURN DATE", "STATUS"});
-        tool::helper::drawLine(80, '-');
+        inventory::apparel::ApparelCatalog newCatalog;
+        newCatalog.shop_id = shop_id;
+        newCatalog.name = apparelName;
+        newCatalog.description = description;
+        newCatalog.category = category;
+        newCatalog.colour = colour;
+        newCatalog.daily_rate = rentalPrice;
 
-        // TODO: Fetch from database with rental info and deposit status
-        tool::ui::printRow(colWidths, {"001", "Baju Melayu", "Ahmad", "YES", "2026-05-05", "Active"});
-        tool::ui::printRow(colWidths, {"002", "Tuxedo", "Fatimah", "NO", "2026-05-10", "Pending"});
-
-        tool::helper::drawLine(80, '=');
+        auto result = inventory::apparel::addApparelCatalog(newCatalog, batches);
+        if (result) {
+            int totalQty = 0;
+            for (const auto& b : batches) totalQty += b.quantity;
+            println("\n  Apparel registered successfully with {} total items!", totalQty);
+        } else {
+            println("\n  Error: {}", result.error());
+        }
+        
         println("\nPress Enter to return to dashboard...");
         cin.ignore(10000, '\n');
     }
 
     void modifyRentalDetails() {
+        tool::helper::clearScreen();
         tool::ui::displayTitle("MODIFY RENTAL DETAILS", 50);
         println("");
 
         int rentalId;
-        print("  Enter Rental ID to modify: ");
-        cin >> rentalId;
+        print("  Enter Rental ID to modify (or 0 to cancel): ");
+        if (!(cin >> rentalId) || rentalId == 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            return;
+        }
         cin.ignore(1000, '\n');
 
         // Display options
         println("\n  [1] Set Return Date");
         println("  [2] Set Condition");
         println("  [3] Set Status");
-        println("  [4] Back to Dashboard");
+        println("  [0] Back to Dashboard");
         print("  Select option: ");
 
         int option;
-        cin >> option;
+        if (!(cin >> option)) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            return;
+        }
         cin.ignore(1000, '\n');
 
         switch (option) {
             case 1: {
-                print("  Enter new return date (YYYY-MM-DD): ");
+                print("  Enter new return date (DD/MM/YYYY): ");
                 string returnDate;
                 getline(cin, returnDate);
                 // TODO: Update in database
@@ -168,16 +227,19 @@ namespace identity::staffui {
                 println("  [1] Active");
                 println("  [2] Returned");
                 println("  [3] Damaged");
+                println("  [0] Back to Dashboard");
                 print("  Select status: ");
                 int statusChoice;
-                cin >> statusChoice;
+                if (!(cin >> statusChoice) || statusChoice == 0) {
+                    cin.clear(); cin.ignore(1000, '\n'); break;
+                }
                 cin.ignore(1000, '\n');
                 // TODO: Update in database
                 println("  Status updated!");
                 break;
             }
-            case 4:
-                break;
+            case 0:
+                return;
             default:
                 println("  Invalid option.");
         }
@@ -187,6 +249,7 @@ namespace identity::staffui {
     }
 
     void viewStaffProfile(const ::identity::auth::UserSession& session) {
+        tool::helper::clearScreen();
         tool::ui::displayTitle("STAFF PROFILE", 50);
         println("");
 

@@ -33,6 +33,7 @@ set(SOURCES
 	src/transaction/RentalUI.cpp
 	src/DatabaseManager/DatabaseManager.cpp
 	src/tool/helper.cpp
+	src/tool/DateHelper.cpp
 	src/tool/CLIComponents.cpp
 )
 
