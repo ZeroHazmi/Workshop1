@@ -14,6 +14,7 @@ struct BankAccount {
     std::string bank_name;
     std::string acc_number;
     std::string acc_holder;
+    double balance;
 };
 
 struct CustomerProfile {
@@ -87,6 +88,9 @@ public:
 
 	// DELETE: Remove bank account
 	static std::expected<bool, std::string> removeBankAccount(int acc_id);
+
+	// UPDATE: Credit bank balance
+	static std::expected<bool, std::string> depositBalance(int acc_id, double amount);
 
 	// ========== UI HELPERS ==========
 	void displayCustomerProfileMenu(int user_id);

@@ -4,6 +4,8 @@
 #include "inventory/Apparel/Apparel.h"
 #include "identity/Profile/Profile.h"
 #include "inventory/InventoryUI.h"
+#include "tool/DateHelper.h"
+#include "transaction/Rental/Rental.h"
 #include <print>
 #include <string>
 #include <iostream>
@@ -178,11 +180,11 @@ namespace identity::staffui {
 
     void modifyRentalDetails() {
         tool::helper::clearScreen();
-        tool::ui::displayTitle("MODIFY RENTAL DETAILS", 50);
+        tool::ui::displayTitle("PROCESS COSTUME RETURN", 50);
         println("");
 
         int rentalId;
-        print("  Enter Rental ID to modify (or 0 to cancel): ");
+        print("  Enter Rental ID to process return (or 0 to cancel): ");
         if (!(cin >> rentalId) || rentalId == 0) {
             cin.clear();
             cin.ignore(1000, '\n');
@@ -190,58 +192,37 @@ namespace identity::staffui {
         }
         cin.ignore(1000, '\n');
 
-        // Display options
-        println("\n  [1] Set Return Date");
-        println("  [2] Set Condition");
-        println("  [3] Set Status");
-        println("  [0] Back to Dashboard");
-        print("  Select option: ");
-
-        int option;
-        if (!(cin >> option)) {
-            cin.clear();
-            cin.ignore(1000, '\n');
-            return;
+        // Prompt for actual return date with format validation
+        string returnDate;
+        while (true) {
+            print("  Enter Actual Return Date (DD/MM/YYYY) (or '0' to cancel): ");
+            getline(cin, returnDate);
+            if (returnDate == "0") return;
+            if (tool::date::isValidFormat(returnDate)) {
+                break;
+            }
+            println("  [Error] Invalid date format. Please use DD/MM/YYYY.");
         }
-        cin.ignore(1000, '\n');
 
-        switch (option) {
-            case 1: {
-                print("  Enter new return date (DD/MM/YYYY): ");
-                string returnDate;
-                getline(cin, returnDate);
-                // TODO: Update in database
-                println("  Return date updated!");
+        // Prompt for condition (Excellent/Good/Fair/Poor/Damaged)
+        string condition;
+        while (true) {
+            print("  Enter Return Condition (Excellent/Good/Fair/Poor/Damaged) (or '0' to cancel): ");
+            getline(cin, condition);
+            if (condition == "0") return;
+            
+            if (condition == "Excellent" || condition == "Good" || condition == "Fair" || condition == "Poor" || condition == "Damaged") {
                 break;
             }
-            case 2: {
-                print("  Enter condition (Excellent/Good/Fair/Poor): ");
-                string condition;
-                getline(cin, condition);
-                // TODO: Update in database
-                println("  Condition updated!");
-                break;
-            }
-            case 3: {
-                println("  Status options:");
-                println("  [1] Active");
-                println("  [2] Returned");
-                println("  [3] Damaged");
-                println("  [0] Back to Dashboard");
-                print("  Select status: ");
-                int statusChoice;
-                if (!(cin >> statusChoice) || statusChoice == 0) {
-                    cin.clear(); cin.ignore(1000, '\n'); break;
-                }
-                cin.ignore(1000, '\n');
-                // TODO: Update in database
-                println("  Status updated!");
-                break;
-            }
-            case 0:
-                return;
-            default:
-                println("  Invalid option.");
+            println("  [Error] Invalid condition. Must be Excellent, Good, Fair, Poor, or Damaged.");
+        }
+
+        println("\n  Processing return...");
+        auto result = ::transaction::rental::processCostumeReturn(rentalId, returnDate, condition);
+        if (result) {
+            println("{}", result.value());
+        } else {
+            println("  [Error] Failed to process return: {}", result.error());
         }
 
         println("\nPress Enter to return to dashboard...");
