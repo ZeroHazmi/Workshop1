@@ -115,18 +115,26 @@ namespace identity::adminui {
         println("");
 
         int staffId;
-        print("  Enter Staff ID to manage: ");
-        cin >> staffId;
+        print("  Enter Staff ID to manage (or 0 to cancel): ");
+        if (!(cin >> staffId) || staffId == 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            return;
+        }
         cin.ignore(1000, '\n');
 
         // Display staff information
         println("\n  [1] Update Staff Information");
         println("  [2] Change Shop Assignment");
-        println("  [3] Back to Dashboard");
+        println("  [0] Back to Dashboard");
         print("  Select option: ");
 
         int option;
-        cin >> option;
+        if (!(cin >> option)) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            return;
+        }
         cin.ignore(1000, '\n');
 
         switch (option) {
@@ -138,8 +146,8 @@ namespace identity::adminui {
                 // TODO: Change shop assignment
                 println("  Changing shop assignment...");
                 break;
-            case 3:
-                break;
+            case 0:
+                return;
             default:
                 println("  Invalid option.");
         }
@@ -205,8 +213,12 @@ namespace identity::adminui {
         println("");
 
         int shopId;
-        print("  Enter Shop ID to manage: ");
-        cin >> shopId;
+        print("  Enter Shop ID to manage (or 0 to cancel): ");
+        if (!(cin >> shopId) || shopId == 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            return;
+        }
         cin.ignore(1000, '\n');
 
         // TODO: Display shop info and allow updates
@@ -214,14 +226,21 @@ namespace identity::adminui {
         println("  [1] Update Shop Name");
         println("  [2] Update Location");
         println("  [3] Update Manager");
-        println("  [4] Back to Dashboard");
+        println("  [0] Back to Dashboard");
         print("  Select option: ");
 
         int option;
-        cin >> option;
+        if (!(cin >> option)) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            return;
+        }
         cin.ignore(1000, '\n');
 
         // TODO: Handle updates based on selection
+        if (option == 0) {
+            return;
+        }
 
         println("\nPress Enter to return to dashboard...");
         cin.ignore(10000, '\n');
@@ -253,8 +272,12 @@ namespace identity::adminui {
         println("");
 
         int shopId;
-        print("  Enter Shop ID: ");
-        cin >> shopId;
+        print("  Enter Shop ID (or 0 to cancel): ");
+        if (!(cin >> shopId) || shopId == 0) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            return;
+        }
         cin.ignore(1000, '\n');
 
         vector<int> colWidths = {4, 25, 12, 10};

@@ -109,8 +109,8 @@ expected<bool, string> Profile::updateStaffProfile(
 // ========== BANK ACCOUNT MANAGEMENT ==========
 
 expected<BankAccount, string> Profile::getBankAccount(int user_id) {
-	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
-				   + to_string(user_id) + " LIMIT 1;";
+	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
+				   + to_string(user_id) + " AND is_deleted = 0 LIMIT 1;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -126,6 +126,7 @@ expected<BankAccount, string> Profile::getBankAccount(int user_id) {
 		account.bank_name = rs->getString("bank_name");
 		account.acc_number = rs->getString("acc_number");
 		account.acc_holder = rs->getString("acc_holder");
+		account.balance = rs->getDouble("balance");
 
 		delete rs;
 		return account;
@@ -137,8 +138,8 @@ expected<BankAccount, string> Profile::getBankAccount(int user_id) {
 
 expected<vector<BankAccount>, string> Profile::getAllBankAccounts(int user_id) {
 	vector<BankAccount> accounts;
-	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder FROM BANK_ACCOUNT WHERE user_id = " 
-					   + to_string(user_id) + ";";
+	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
+					   + to_string(user_id) + " AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -154,6 +155,7 @@ expected<vector<BankAccount>, string> Profile::getAllBankAccounts(int user_id) {
 		account.bank_name = rs->getString("bank_name");
 		account.acc_number = rs->getString("acc_number");
 		account.acc_holder = rs->getString("acc_holder");
+		account.balance = rs->getDouble("balance");
 
 		accounts.push_back(account);
 	}
@@ -187,7 +189,7 @@ expected<int, string> Profile::linkBankAccount(
 	}
 
 	// Retrieve the new account ID
-	string selectQuery = "SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + to_string(user_id) + ";";
+	string selectQuery = "SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + to_string(user_id) + " AND is_deleted = 0;";
 	auto selectResult = database::DatabaseManager::getInstance().executeQuery(selectQuery);
 
 	if (!selectResult) {
@@ -214,7 +216,7 @@ expected<bool, string> Profile::updateBankAccount(
 	string query = "UPDATE BANK_ACCOUNT SET bank_name = '" + string(bank_name) + 
 					   "', acc_number = '" + string(acc_number) + 
 					   "', acc_holder = '" + string(acc_holder) + 
-					   "' WHERE acc_id = " + to_string(acc_id) + ";";
+					   "' WHERE acc_id = " + to_string(acc_id) + " AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 
@@ -226,7 +228,19 @@ expected<bool, string> Profile::updateBankAccount(
 }
 
 expected<bool, string> Profile::removeBankAccount(int acc_id) {
-	string query = "DELETE FROM BANK_ACCOUNT WHERE acc_id = " + to_string(acc_id) + ";";
+	string query = "UPDATE BANK_ACCOUNT SET is_deleted = 1 WHERE acc_id = " + to_string(acc_id) + ";";
+
+	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
+
+	if (!result) {
+		return unexpected(result.error());
+	}
+
+	return true;
+}
+
+expected<bool, string> Profile::depositBalance(int acc_id, double amount) {
+	string query = "UPDATE BANK_ACCOUNT SET balance = balance + " + to_string(amount) + " WHERE acc_id = " + to_string(acc_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 

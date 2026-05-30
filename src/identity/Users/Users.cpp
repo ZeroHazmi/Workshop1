@@ -9,7 +9,7 @@ namespace identity::users {
 
 expected<vector<identify::User>, string> Users::getAllUsers() {
 	vector<identify::User> users;
-	string query = "SELECT user_id, username, password, roles FROM USERS;";
+	string query = "SELECT user_id, username, password, roles FROM USERS WHERE is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -44,7 +44,7 @@ expected<vector<identify::User>, string> Users::getAllUsers() {
 
 expected<identify::User, string> Users::getUserById(int user_id) {
 	string query = "SELECT user_id, username, password, roles FROM USERS WHERE user_id = " 
-					   + to_string(user_id) + ";";
+					   + to_string(user_id) + " AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -79,7 +79,7 @@ expected<identify::User, string> Users::getUserById(int user_id) {
 
 expected<identify::User, string> Users::getUserByUsername(string_view username) {
 	string query = "SELECT user_id, username, password, roles FROM USERS WHERE username = '" 
-					   + string(username) + "';";
+					   + string(username) + "' AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -218,10 +218,14 @@ expected<bool, string> Users::deleteUser(int user_id, string roles) {
 		if (!resCustomerSoftDelete) return unexpected(resCustomerSoftDelete.error());
 	}
 
-	auto checkBankAccoutnResult = db.executeQuery("SELECT account_id FROM BANK_ACCOUNT WHERE user_id = " + idStr + " AND is_deleted = 0;");
+	auto checkBankAccoutnResult = db.executeQuery("SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + idStr + " AND is_deleted = 0;");
 	if (!checkBankAccoutnResult) return unexpected(checkBankAccoutnResult.error());
 
-	if(checkBankAccoutnResult.value()->next()) {
+	sql::ResultSet* rsBank = checkBankAccoutnResult.value();
+	bool hasBank = rsBank->next();
+	delete rsBank;
+
+	if (hasBank) {
 		// 2. Set is_delete to 1 for the user's bank account (soft delete)
 		auto resBankSoftDelete = db.executeUpdate("UPDATE BANK_ACCOUNT SET is_deleted = 1 WHERE user_id = " + idStr + ";");
 		if (!resBankSoftDelete) return unexpected(resBankSoftDelete.error());

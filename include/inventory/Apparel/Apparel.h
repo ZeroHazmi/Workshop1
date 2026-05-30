@@ -3,45 +3,63 @@
 #include <string>
 #include <vector>
 #include <expected>
-
-struct ApparelCatalog {
-	int catalog_id; // Primary Key
-	int shop_id;    // Foreign Key -> Shops.shop_id
-	std::string description;
-	std::string category;
-	double daily_rate;
-	std::string size;
-	std::string colour;
-};
-
-struct ApparelItem {
-	int item_id;     // Primary Key
-	int catalog_id;  // Foreign Key -> ApparelCatalog
-	std::string status; // e.g., Available/Rented/Laundry/Maintenance
-	std::string condition_status; // e.g., Excellent, Good, Damaged
-};
-
-// Joined struct for display purposes
-struct CatalogDisplayItem {
-    int catalog_id;
-    int shop_id;
-    std::string description;
-    std::string category;
-    double daily_rate;
-    int available_stock; // Calculated from COUNT(item_id) where status='Available'
-};
+#include <string_view>
+#include <utility>
 
 namespace inventory::apparel {
-    // Add New Apparel Catalog (and generate N physical items)
-    std::expected<void, std::string> addApparelCatalog(const ApparelCatalog& catalog, int initial_stock, std::string_view initial_condition);
 
-    // Retrieve all apparel for catalog display (with optional search)
-    std::expected<std::vector<CatalogDisplayItem>, std::string> getCatalogDisplay(std::string_view searchTerm = "");
+    struct ApparelCatalog {
+        int catalog_id;
+        int shop_id;
+        std::string name;
+        std::string description;
+        std::string category;
+        std::string colour;
+        double daily_rate;
+    };
 
-    // Retrieve items needing laundry/maintenance
+    struct ApparelItem {
+        int item_id;
+        int catalog_id;
+        std::string size;
+        std::string status;
+        std::string condition_status;
+    };
+
+    struct CatalogDisplayItem {
+        int catalog_id;
+        int shop_id;
+        std::string name;
+        std::string category;
+        double daily_rate;
+        int available_stock;
+    };
+
+    struct ItemBatch {
+        std::string size;
+        int quantity;
+        std::string condition;
+    };
+
+    // Add New Apparel Catalog (and generate physical items from batches)
+    std::expected<void, std::string> addApparelCatalog(const ApparelCatalog& catalog, const std::vector<ItemBatch>& batches);
+
+    // Get the total number of distinct catalogs for pagination
+    std::expected<int, std::string> getTotalApparelsCount(std::string_view searchTerm = "");
+
+    // Retrieve apparel for catalog display with pagination and optional search
+    std::expected<std::vector<CatalogDisplayItem>, std::string> getCatalogDisplay(int limit, int offset, std::string_view searchTerm = "");
+
+    // Get a specific catalog item by its ID
+    std::expected<ApparelCatalog, std::string> getApparelById(int catalog_id);
+
+    // Get available sizes and quantities for a given catalog
+    std::expected<std::vector<std::pair<std::string, int>>, std::string> getAvailableSizes(int catalog_id);
+
+    // Retrieve items needing laundry/maintenance (from origin/main)
     std::expected<std::vector<ApparelItem>, std::string> getItemsByStatus(std::string_view status);
 
-    // Update specific item status/condition
+    // Update specific item status/condition (from origin/main)
     std::expected<void, std::string> updateItemCondition(int item_id, std::string_view condition);
     std::expected<void, std::string> updateItemStatus(int item_id, std::string_view status);
 }
