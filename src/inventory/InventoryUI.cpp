@@ -110,16 +110,19 @@ namespace inventory::ui {
                     session.userid, item.catalog_id, selected_size, start, end, item.daily_rate, total_days
                 );
                 if (txResult) {
-                    println("\n  Success: Item successfully rented! Reference Number: {}", txResult.value());
+                    std::print("\n  Success: Item successfully rented! Reference Number: {}\n", txResult.value());
                 } else {
-                    println("\n  Error: {}", txResult.error());
+                    std::print("\n  Error: {}\n", txResult.error());
                 }
             } else {
                 println("\n  Rental cancelled.");
             }
 
-            println("\nPress Enter to return to catalog...");
-            cin.get();
+            string waitInput;
+            do {
+                print("\nEnter '0' to return to catalog: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return true; // Exit to catalog
         }
         return false;
@@ -251,7 +254,7 @@ namespace inventory::ui {
         // Pagination
         if (totalPages > 1) {
           string pageInfo = format("Page {} of {} | Total: {}", currentPage, totalPages, totalItems);
-          int padding = (75 - pageInfo.length()) / 2;
+          int padding = (75 - static_cast<int>(pageInfo.length())) / 2;
           string spaces(padding > 0 ? padding : 0, ' ');
           println("{}{}", spaces, pageInfo);
 
@@ -300,8 +303,11 @@ namespace inventory::ui {
         auto staffProfileOpt = ::identity::profile::Profile::getStaffProfile(session.userid);
         if (!staffProfileOpt) {
             println("  Error: Could not retrieve staff profile.");
-            println("\nPress Enter to return to dashboard...");
-            cin.ignore(10000, '\n');
+            string waitInput;
+            do {
+                print("\nEnter '0' to return to dashboard: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
         int shop_id = staffProfileOpt.value().shop_id;
@@ -362,8 +368,11 @@ namespace inventory::ui {
 
         if (batches.empty()) {
             println("\n  Registration cancelled: No inventory batches added.");
-            println("\nPress Enter to return to dashboard...");
-            cin.ignore(10000, '\n');
+            string waitInput;
+            do {
+                print("\nEnter '0' to return to dashboard: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
 
@@ -384,8 +393,11 @@ namespace inventory::ui {
             println("\n  Error: {}", result.error());
         }
         
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
 } // namespace inventory::ui
