@@ -101,8 +101,11 @@ namespace identity::adminui {
         // Use the new registration flow with staff role
         ::identity::auth::Auth::handleRegisterFlow("staff");
         
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void manageStaffAccount() {
@@ -152,8 +155,11 @@ namespace identity::adminui {
                 println("  Invalid option.");
         }
 
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void viewAdminProfile(const ::identity::auth::UserSession& session) {
@@ -172,8 +178,11 @@ namespace identity::adminui {
         
         println("");
         tool::helper::drawLine(64, '-');
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void registerNewShop() {
@@ -199,8 +208,11 @@ namespace identity::adminui {
         // TODO: Call database function to insert shop
         println("\n  Shop registered successfully!");
         
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void manageShopInformation() {
@@ -242,8 +254,11 @@ namespace identity::adminui {
             return;
         }
 
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void displayShopList() {
@@ -261,8 +276,11 @@ namespace identity::adminui {
         tool::ui::printRow(colWidths, {"002", "Branch Shop", "Building B, UTeM", "Ali"});
 
         tool::helper::drawLine(65, '=');
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void viewShopInventory() {
@@ -289,7 +307,10 @@ namespace identity::adminui {
         tool::ui::printRow(colWidths, {"002", "Tuxedo Black (Slim)", "8", "Good"});
 
         tool::helper::drawLine(65, '=');
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 }

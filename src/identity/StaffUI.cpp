@@ -6,6 +6,8 @@
 #include "inventory/InventoryUI.h"
 #include "tool/DateHelper.h"
 #include "transaction/Rental/Rental.h"
+#include "DatabaseManager/DatabaseManager.h"
+#include <cppconn/resultset.h>
 #include <print>
 #include <string>
 #include <iostream>
@@ -29,9 +31,8 @@ namespace identity::staffui {
         
         // Staff Menu Options
         println("  [1] Manage Apparel Inventory");
-        println("  [2] Process Costume Return");
-        println("  [3] View Active/Overdue Rentals");
-        println("  [4] View Staff Profile");
+        println("  [2] Manage Active Rentals & Returns");
+        println("  [3] View Staff Profile");
         println("  [0] Logout");
         
         // Footer decoration
@@ -57,12 +58,9 @@ namespace identity::staffui {
                     manageApparelInventory(session);
                     break;
                 case 2:
-                    processApparelReturn();
+                    manageRentalsAndReturns(session);
                     break;
                 case 3:
-                    viewActiveRentals();
-                    break;
-                case 4:
                     viewStaffProfile(session);
                     break;
                 case 0:
@@ -82,6 +80,59 @@ namespace identity::staffui {
         }
     }
 
+    static bool displayCatalogItemsHelper(int catalogId) {
+        auto& db = database::DatabaseManager::getInstance();
+        
+        // Fetch the catalog name to make the header nice
+        std::string nameQuery = std::format(
+            "SELECT name FROM apparel_catalog WHERE catalog_id = {} AND is_deleted = 0",
+            catalogId
+        );
+        auto nameRes = db.executeQuery(nameQuery);
+        if (!nameRes) return false;
+        
+        sql::ResultSet* nrs = nameRes.value();
+        if (!nrs->next()) {
+            delete nrs;
+            std::print("  [Error] Catalog ID #{} not found.\n", catalogId);
+            return false;
+        }
+        std::string catalogName = nrs->getString("name");
+        delete nrs;
+        
+        std::string query = std::format(
+            "SELECT item_id, size, status, condition_status FROM apparel_item "
+            "WHERE catalog_id = {} AND is_deleted = 0",
+            catalogId
+        );
+        auto result = db.executeQuery(query);
+        if (!result) return false;
+        
+        sql::ResultSet* rs = result.value();
+        std::print("\n  --- PHYSICAL ITEMS FOR CATALOG #{} ({}) ---\n", catalogId, catalogName);
+        vector<int> colWidths = {10, 10, 15, 15};
+        tool::ui::printRow(colWidths, {"ITEM ID", "SIZE", "STATUS", "CONDITION"});
+        tool::helper::drawLine(55, '-');
+        
+        bool found = false;
+        while (rs->next()) {
+            found = true;
+            tool::ui::printRow(colWidths, {
+                to_string(rs->getInt("item_id")),
+                rs->getString("size"),
+                rs->getString("status"),
+                rs->getString("condition_status")
+            });
+        }
+        delete rs;
+        tool::helper::drawLine(55, '-');
+        
+        if (!found) {
+            std::print("  No physical items registered for this catalog.\n");
+        }
+        return found;
+    }
+
     static void updateConditionFlow() {
         tool::helper::clearScreen();
         tool::helper::drawLine(64, '=');
@@ -89,21 +140,42 @@ namespace identity::staffui {
         tool::helper::drawLine(64, '=');
         println("");
 
-        int itemId;
-        print("  Enter Item ID (0 to cancel): ");
-        if (!(cin >> itemId) || itemId == 0) {
-            cin.clear();
-            cin.ignore(1000, '\n');
-            return;
+        int itemId = -1;
+        while (true) {
+            print("  Enter Item ID to update (or 'S' to search by Catalog, '0' to cancel): ");
+            string input;
+            getline(cin, input);
+            
+            if (input == "0") return;
+            if (input == "S" || input == "s") {
+                int catalogId;
+                print("  Enter Catalog ID to view physical items: ");
+                if (!(cin >> catalogId)) {
+                    cin.clear();
+                    cin.ignore(1000, '\n');
+                    continue;
+                }
+                cin.ignore(1000, '\n');
+                displayCatalogItemsHelper(catalogId);
+                println("");
+                continue;
+            }
+            
+            try {
+                itemId = stoi(input);
+                break;
+            } catch (...) {
+                println("  [Error] Invalid input. Please enter a valid Item ID, 'S', or '0'.");
+            }
         }
-        cin.ignore(1000, '\n');
 
         println("  [1] Excellent");
         println("  [2] Good");
         println("  [3] Fair");
         println("  [4] Poor");
         println("  [5] Damaged");
-        print("  Select new condition: ");
+        println("  [6] Laundry");
+        print("  Select new condition / status option: ");
 
         int opt;
         if (!(cin >> opt)) {
@@ -113,25 +185,140 @@ namespace identity::staffui {
         }
         cin.ignore(1000, '\n');
 
-        string condition = "";
-        switch(opt) {
-            case 1: condition = "Excellent"; break;
-            case 2: condition = "Good"; break;
-            case 3: condition = "Fair"; break;
-            case 4: condition = "Poor"; break;
-            case 5: condition = "Damaged"; break;
-            default: println("  Invalid option."); return;
-        }
-
-        auto result = inventory::apparel::updateItemCondition(itemId, condition);
-        if (result) {
-            println("\n  Condition for Item #{} updated to '{}'.", itemId, condition);
+        if (opt == 6) {
+            auto result = inventory::apparel::updateItemStatus(itemId, "Laundry");
+            if (result) {
+                std::print("\n  Status for Item #{} successfully updated to 'Laundry'.\n", itemId);
+            } else {
+                std::print("\n  Error: {}\n", result.error());
+            }
         } else {
-            println("\n  Error: {}", result.error());
+            string condition = "";
+            switch(opt) {
+                case 1: condition = "Excellent"; break;
+                case 2: condition = "Good"; break;
+                case 3: condition = "Fair"; break;
+                case 4: condition = "Poor"; break;
+                case 5: condition = "Damaged"; break;
+                default: std::print("  Invalid option.\n"); return;
+            }
+
+            auto result = inventory::apparel::updateItemCondition(itemId, condition);
+            if (result) {
+                std::print("\n  Condition for Item #{} updated to '{}'.\n", itemId, condition);
+            } else {
+                std::print("\n  Error: {}\n", result.error());
+            }
         }
 
-        println("\nPress Enter to continue...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
+    }
+
+    static void retireApparelFlow() {
+        tool::helper::clearScreen();
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("RETIRE / REMOVE DAMAGED APPAREL", 64);
+        tool::helper::drawLine(64, '=');
+        println("");
+
+        int itemId = -1;
+        while (true) {
+            print("  Enter Item ID to retire (or 'S' to search by Catalog, '0' to cancel): ");
+            string input;
+            getline(cin, input);
+            
+            if (input == "0") return;
+            if (input == "S" || input == "s") {
+                int catalogId;
+                print("  Enter Catalog ID to view physical items: ");
+                if (!(cin >> catalogId)) {
+                    cin.clear();
+                    cin.ignore(1000, '\n');
+                    continue;
+                }
+                cin.ignore(1000, '\n');
+                displayCatalogItemsHelper(catalogId);
+                println("");
+                continue;
+            }
+            
+            try {
+                itemId = stoi(input);
+                break;
+            } catch (...) {
+                println("  [Error] Invalid input. Please enter a valid Item ID, 'S', or '0'.");
+            }
+        }
+
+        // Fetch details of the item to confirm retirement
+        auto& db = database::DatabaseManager::getInstance();
+        std::string query = std::format(
+            "SELECT i.item_id, c.name, i.size, i.status, i.condition_status "
+            "FROM apparel_item i "
+            "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
+            "WHERE i.item_id = {} AND i.is_deleted = 0 LIMIT 1",
+            itemId
+        );
+        auto result = db.executeQuery(query);
+        if (!result) {
+            std::print("  [Error] Database lookup failed: {}\n", result.error());
+            return;
+        }
+
+        sql::ResultSet* rs = result.value();
+        if (!rs->next()) {
+            delete rs;
+            std::print("  [Error] Item ID #{} not found or already retired.\n", itemId);
+            string waitInput;
+            do {
+                print("\nEnter '0' to return: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
+            return;
+        }
+
+        std::string itemName = rs->getString("name");
+        std::string itemSize = rs->getString("size");
+        std::string itemStatus = rs->getString("status");
+        std::string itemCondition = rs->getString("condition_status");
+        delete rs;
+
+        std::print("\n  --- ITEM TO RETIRE ---\n");
+        std::print("  Item ID   : {}\n", itemId);
+        std::print("  Name      : {}\n", itemName);
+        std::print("  Size      : {}\n", itemSize);
+        std::print("  Status    : {}\n", itemStatus);
+        std::print("  Condition : {}\n", itemCondition);
+        std::print("\n");
+
+        print("  Are you sure you want to permanently retire this item? (Y/N): ");
+        string confirm;
+        getline(cin, confirm);
+
+        if (confirm == "Y" || confirm == "y") {
+            std::string retireQuery = std::format(
+                "UPDATE apparel_item SET is_deleted = 1, status = 'Retired' WHERE item_id = {}",
+                itemId
+            );
+            auto retireRes = db.executeUpdate(retireQuery);
+            if (retireRes) {
+                std::print("\n  Success: Item #{} has been successfully retired from circulation.\n", itemId);
+            } else {
+                std::print("\n  [Error] Failed to retire item: {}\n", retireRes.error());
+            }
+        } else {
+            std::print("\n  Retirement cancelled.\n");
+        }
+
+        string waitInput;
+        do {
+            print("\nEnter '0' to return: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     static void processLaundryFlow() {
@@ -144,16 +331,22 @@ namespace identity::staffui {
         auto result = inventory::apparel::getItemsByStatus("Laundry");
         if (!result) {
             println("  Error fetching laundry items: {}", result.error());
-            println("\nPress Enter to continue...");
-            cin.ignore(10000, '\n');
+            string waitInput;
+            do {
+                print("\nEnter '0' to return: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
 
         auto items = result.value();
         if (items.empty()) {
             println("  No items currently in laundry.");
-            println("\nPress Enter to continue...");
-            cin.ignore(10000, '\n');
+            string waitInput;
+            do {
+                print("\nEnter '0' to return: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
 
@@ -179,8 +372,11 @@ namespace identity::staffui {
             println("\n  Error: {}", updateRes.error());
         }
 
-        println("\nPress Enter to continue...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void manageApparelInventory(const ::identity::auth::UserSession& session) {
@@ -224,9 +420,7 @@ namespace identity::staffui {
                     processLaundryFlow();
                     break;
                 case 5:
-                    println("\n  [Feature coming soon: Retire Apparel]");
-                    println("  Press Enter to continue...");
-                    cin.ignore(10000, '\n');
+                    retireApparelFlow();
                     break;
                 case 0:
                     inInventoryMenu = false;
@@ -238,70 +432,153 @@ namespace identity::staffui {
         }
     }
 
-    void processApparelReturn() {
-        tool::helper::clearScreen();
-        tool::ui::displayTitle("PROCESS COSTUME RETURN", 50);
-        println("");
+    void manageRentalsAndReturns(const ::identity::auth::UserSession& session) {
+        bool inRentalsMenu = true;
+        string searchTerm = "";
+        int currentPage = 1;
+        const int itemsPerPage = 25;
 
-        int rentalId;
-        print("  Enter Rental ID to process return (or 0 to cancel): ");
-        if (!(cin >> rentalId) || rentalId == 0) {
-            cin.clear();
-            cin.ignore(1000, '\n');
-            return;
-        }
-        cin.ignore(1000, '\n');
-
-        // Prompt for actual return date with format validation
-        string returnDate;
-        while (true) {
-            print("  Enter Actual Return Date (DD/MM/YYYY) (or '0' to cancel): ");
-            getline(cin, returnDate);
-            if (returnDate == "0") return;
-            if (tool::date::isValidFormat(returnDate)) {
-                break;
+        while (inRentalsMenu) {
+            tool::helper::clearScreen();
+            tool::helper::drawLine(85, '=');
+            tool::ui::displayTitle("ACTIVE & OVERDUE RENTALS MANAGEMENT", 85);
+            tool::helper::drawLine(85, '=');
+            if (!searchTerm.empty()) {
+                println("  [Search Filter: '{}']", searchTerm);
             }
-            println("  [Error] Invalid date format. Please use DD/MM/YYYY.");
-        }
+            println("");
 
-        // Prompt for condition (Excellent/Good/Fair/Poor/Damaged)
-        string condition;
-        while (true) {
-            print("  Enter Return Condition (Excellent/Good/Fair/Poor/Damaged) (or '0' to cancel): ");
-            getline(cin, condition);
-            if (condition == "0") return;
-            
-            if (condition == "Excellent" || condition == "Good" || condition == "Fair" || condition == "Poor" || condition == "Damaged") {
-                break;
+            // Header for active rentals table
+            vector<int> colWidths = {5, 20, 20, 5, 12, 10, 10};
+            tool::ui::printRow(colWidths, {"ID", "CUSTOMER", "ITEM RENTED", "SIZE", "RETURN DATE", "RATE/DAY", "STATUS"});
+            tool::helper::drawLine(85, '-');
+
+            auto result = ::transaction::rental::getActiveRentals(searchTerm);
+            if (result) {
+                const auto& allItems = result.value();
+                int totalItems = static_cast<int>(allItems.size());
+                int totalPages = totalItems == 0 ? 1 : (totalItems + itemsPerPage - 1) / itemsPerPage;
+
+                if (currentPage > totalPages) currentPage = totalPages;
+                if (currentPage < 1) currentPage = 1;
+
+                int startIndex = (currentPage - 1) * itemsPerPage;
+                int endIndex = min(startIndex + itemsPerPage, totalItems);
+
+                if (totalItems == 0) {
+                    println("  No active rentals found.");
+                } else {
+                    for (int i = startIndex; i < endIndex; ++i) {
+                        const auto& item = allItems[i];
+                        string statusStr = item.is_overdue ? "OVERDUE" : "Active";
+                        tool::ui::printRow(colWidths, {
+                            to_string(item.rental_id),
+                            item.customer_name,
+                            item.item_name,
+                            item.size,
+                            item.expected_return_date,
+                            format("RM {:.2f}", item.daily_rate),
+                            statusStr
+                        });
+                    }
+                }
+
+                tool::helper::drawLine(85, '=');
+                
+                // Pagination and Options Info
+                if (totalPages > 1) {
+                    string pageInfo = format("Page {} of {} | Total Outstanding: {}", currentPage, totalPages, totalItems);
+                    int padding = (85 - static_cast<int>(pageInfo.length())) / 2;
+                    string spaces(padding > 0 ? padding : 0, ' ');
+                    println("{}{}", spaces, pageInfo);
+                    tool::helper::drawLine(85, '-');
+                    println("  [N] Next Page      [P] Previous Page      [S] Search Rentals");
+                } else {
+                    println("  [S] Search Rentals");
+                }
+                println("  [R] Process Return/Check-in Costume");
+                println("  [0] Back to Main Dashboard");
+                tool::helper::drawLine(85, '-');
+                print("  Enter choice: ");
+
+                string input;
+                getline(cin, input);
+
+                if (input == "0") {
+                    inRentalsMenu = false;
+                } else if (input == "N" || input == "n") {
+                    if (currentPage < totalPages) currentPage++;
+                } else if (input == "P" || input == "p") {
+                    if (currentPage > 1) currentPage--;
+                } else if (input == "S" || input == "s") {
+                    print("  Enter search query (Customer or Apparel name): ");
+                    getline(cin, searchTerm);
+                    currentPage = 1;
+                } else if (input == "R" || input == "r") {
+                    // Inline Check-in costume return flow!
+                    println("\n  --- PROCESS COSTUME RETURN ---");
+                    int rentalId;
+                    print("  Enter Rental ID to process (or 0 to cancel): ");
+                    if (!(cin >> rentalId) || rentalId == 0) {
+                        cin.clear();
+                        cin.ignore(1000, '\n');
+                        continue;
+                    }
+                    cin.ignore(1000, '\n');
+
+                    // Prompt for actual return date with format validation
+                    string returnDate;
+                    while (true) {
+                        print("  Enter Actual Return Date (DD/MM/YYYY) (or '0' to cancel): ");
+                        getline(cin, returnDate);
+                        if (returnDate == "0") break;
+                        if (tool::date::isValidFormat(returnDate)) {
+                            break;
+                        }
+                        println("  [Error] Invalid date format. Please use DD/MM/YYYY.");
+                    }
+                    if (returnDate == "0") continue;
+
+                    // Prompt for condition (Excellent/Good/Fair/Poor/Damaged)
+                    string condition;
+                    while (true) {
+                        print("  Enter Return Condition (Excellent/Good/Fair/Poor/Damaged) (or '0' to cancel): ");
+                        getline(cin, condition);
+                        if (condition == "0") break;
+                        
+                        if (condition == "Excellent" || condition == "Good" || condition == "Fair" || condition == "Poor" || condition == "Damaged") {
+                            break;
+                        }
+                        println("  [Error] Invalid condition. Must be Excellent, Good, Fair, Poor, or Damaged.");
+                    }
+                    if (condition == "0") continue;
+
+                    println("\n  Processing return...");
+                    auto returnRes = ::transaction::rental::processCostumeReturn(rentalId, returnDate, condition);
+                    if (returnRes) {
+                        println("{}", returnRes.value());
+                    } else {
+                        println("  [Error] Failed to process return: {}", returnRes.error());
+                    }
+                    string waitInput;
+                    do {
+                        print("\nEnter '0' to return: ");
+                        getline(cin, waitInput);
+                    } while (waitInput != "0");
+                } else {
+                    println("  Invalid choice.");
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
+            } else {
+                println("  Error retrieving active rentals: {}", result.error());
+                string waitInput;
+                do {
+                    print("\nEnter '0' to return to dashboard: ");
+                    getline(cin, waitInput);
+                } while (waitInput != "0");
+                inRentalsMenu = false;
             }
-            println("  [Error] Invalid condition. Must be Excellent, Good, Fair, Poor, or Damaged.");
         }
-
-        println("\n  Processing return...");
-        auto result = ::transaction::rental::processCostumeReturn(rentalId, returnDate, condition);
-        if (result) {
-            println("{}", result.value());
-        } else {
-            println("  [Error] Failed to process return: {}", result.error());
-        }
-
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
-    }
-
-    void viewActiveRentals() {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("ACTIVE & OVERDUE RENTALS", 64);
-        tool::helper::drawLine(64, '=');
-
-        println("");
-        
-        // TODO: Fetch active/overdue rentals from database
-        println("  [Feature coming soon: Active Rentals List]");
-        
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
     }
 
     void viewStaffProfile(const ::identity::auth::UserSession& session) {
@@ -322,7 +599,10 @@ namespace identity::staffui {
         println("  (Note: Contact admin to modify profile information)");
         tool::helper::drawLine(64, '-');
         
-        println("\nPress Enter to return to dashboard...");
-        cin.ignore(10000, '\n');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 }

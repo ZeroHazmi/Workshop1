@@ -1,17 +1,22 @@
-#include "DatabaseManager/DatabaseManager.h"
 #include "transaction/Rental/Rental.h"
+#include "DatabaseManager/DatabaseManager.h"
 #include "tool/DateHelper.h"
 #include <format>
 #include <iostream>
 #include <algorithm>
+#include <vector>
+#include <expected>
 
 namespace transaction::rental {
+
     std::string toMySqlDate(const std::string &date) {
-      // DD/MM/YYYY to YYYY-MM-DD
-      if (date.length() != 10)
-        return date;
-      return date.substr(6, 4) + "-" + date.substr(3, 2) + "-" +
-             date.substr(0, 2);
+        if (date.length() != 10) return date;
+        return date.substr(6, 4) + "-" + date.substr(3, 2) + "-" + date.substr(0, 2);
+    }
+
+    std::string fromMySqlDate(const std::string &date) {
+        if (date.length() != 10) return date;
+        return date.substr(8, 2) + "/" + date.substr(5, 2) + "/" + date.substr(0, 4);
     }
 
     std::expected<std::string, std::string> createRental(
@@ -61,7 +66,7 @@ namespace transaction::rental {
 
       // 3. Query Bank Account & Validate Balance
       std::string bankQuery = std::format(
-          "SELECT acc_id, balance FROM bank_account WHERE user_id = {} AND is_deleted = 0 LIMIT 1",
+          "SELECT acc_id, balance FROM BANK_ACCOUNT WHERE user_id = {} AND is_deleted = 0 LIMIT 1",
           user_id);
       auto bankRes = db.executeQuery(bankQuery);
       if (!bankRes) {
@@ -89,7 +94,7 @@ namespace transaction::rental {
 
       // Deduct the initial charge (Base fee + Security Deposit hold)
       std::string deductQuery = std::format(
-          "UPDATE bank_account SET balance = balance - {:.2f} WHERE acc_id = {}",
+          "UPDATE BANK_ACCOUNT SET balance = balance - {:.2f} WHERE acc_id = {}",
           total_due, acc_id);
       auto deductRes = db.executeUpdate(deductQuery);
       if (!deductRes) {
@@ -187,25 +192,14 @@ namespace transaction::rental {
             RentalHistoryItem item;
             item.rental_id = rs->getInt("rental_id");
             
-            // Format dates returned by DB appropriately
-            // MySQL dates are YYYY-MM-DD, convert to DD/MM/YYYY for UI consistency
             std::string rDate = rs->getString("rental_date");
-            if (rDate.length() == 10) {
-                rDate = rDate.substr(8, 2) + "/" + rDate.substr(5, 2) + "/" + rDate.substr(0, 4);
-            }
-            item.rental_date = rDate;
+            item.rental_date = fromMySqlDate(rDate);
             
             std::string eDate = rs->getString("expected_return_date");
-            if (eDate.length() == 10) {
-                eDate = eDate.substr(8, 2) + "/" + eDate.substr(5, 2) + "/" + eDate.substr(0, 4);
-            }
-            item.expected_return_date = eDate;
+            item.expected_return_date = fromMySqlDate(eDate);
             
             std::string actDate = rs->getString("actual_return_date");
-            if (actDate.length() == 10) {
-                actDate = actDate.substr(8, 2) + "/" + actDate.substr(5, 2) + "/" + actDate.substr(0, 4);
-            }
-            item.actual_return_date = actDate;
+            item.actual_return_date = fromMySqlDate(actDate);
 
             item.item_name = rs->getString("item_name");
             item.size = rs->getString("size");
@@ -303,9 +297,53 @@ namespace transaction::rental {
         return stats;
     }
 
-    std::string fromMySqlDate(const std::string &date) {
-        if (date.length() != 10) return date;
-        return date.substr(8, 2) + "/" + date.substr(5, 2) + "/" + date.substr(0, 4);
+    std::expected<std::vector<ActiveRentalItem>, std::string> getActiveRentals(const std::string& searchTerm) {
+        auto& db = database::DatabaseManager::getInstance();
+        
+        std::string query = 
+            "SELECT r.rental_id, cust.fullname AS customer_name, c.name AS item_name, i.size, "
+            "       r.rental_date, r.expected_return_date, c.daily_rate, COALESCE(inv.payment_status, 'Paid') AS payment_status, "
+            "       CASE WHEN CURRENT_DATE() > r.expected_return_date THEN 1 ELSE 0 END AS is_overdue "
+            "FROM rental r "
+            "JOIN customers cust ON r.cust_id = cust.cust_id "
+            "JOIN rental_details rd ON r.rental_id = rd.rental_id "
+            "JOIN apparel_item i ON rd.item_id = i.item_id "
+            "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
+            "LEFT JOIN invoices inv ON r.rental_id = inv.rental_id "
+            "WHERE rd.actual_return_date IS NULL AND r.is_deleted = 0";
+
+        if (!searchTerm.empty()) {
+            query += std::format(" AND (cust.fullname LIKE '%{}%' OR c.name LIKE '%{}%')", searchTerm, searchTerm);
+        }
+
+        query += " ORDER BY is_overdue DESC, r.expected_return_date ASC";
+
+        auto result = db.executeQuery(query);
+        if (!result) return std::unexpected(result.error());
+
+        std::vector<ActiveRentalItem> items;
+        sql::ResultSet* rs = result.value();
+        while (rs->next()) {
+            ActiveRentalItem item;
+            item.rental_id = rs->getInt("rental_id");
+            item.customer_name = rs->getString("customer_name");
+            item.item_name = rs->getString("item_name");
+            item.size = rs->getString("size");
+            
+            std::string rDate = rs->getString("rental_date");
+            item.rental_date = fromMySqlDate(rDate);
+            
+            std::string eDate = rs->getString("expected_return_date");
+            item.expected_return_date = fromMySqlDate(eDate);
+
+            item.daily_rate = rs->getDouble("daily_rate");
+            item.payment_status = rs->getString("payment_status");
+            item.is_overdue = (rs->getInt("is_overdue") == 1);
+            
+            items.push_back(item);
+        }
+        delete rs;
+        return items;
     }
 
     std::expected<std::string, std::string> processCostumeReturn(
@@ -369,7 +407,7 @@ namespace transaction::rental {
 
         // 4. Query bank account for settlement
         std::string bankQuery = std::format(
-            "SELECT acc_id, balance FROM bank_account WHERE user_id = {} AND is_deleted = 0 LIMIT 1",
+            "SELECT acc_id, balance FROM BANK_ACCOUNT WHERE user_id = {} AND is_deleted = 0 LIMIT 1",
             user_id
         );
         auto bankRes = db.executeQuery(bankQuery);
@@ -392,7 +430,7 @@ namespace transaction::rental {
             refund = security_deposit - totalSurcharges;
             if (acc_id != -1 && refund > 0) {
                 std::string refundQuery = std::format(
-                    "UPDATE bank_account SET balance = balance + {:.2f} WHERE acc_id = {}",
+                    "UPDATE BANK_ACCOUNT SET balance = balance + {:.2f} WHERE acc_id = {}",
                     refund, acc_id
                 );
                 (void)db.executeUpdate(refundQuery);
@@ -403,7 +441,7 @@ namespace transaction::rental {
             if (acc_id != -1) {
                 if (active_balance >= extraCharge) {
                     std::string chargeQuery = std::format(
-                        "UPDATE bank_account SET balance = balance - {:.2f} WHERE acc_id = {}",
+                        "UPDATE BANK_ACCOUNT SET balance = balance - {:.2f} WHERE acc_id = {}",
                         extraCharge, acc_id
                     );
                     (void)db.executeUpdate(chargeQuery);
@@ -411,7 +449,7 @@ namespace transaction::rental {
                 } else {
                     // Insufficient funds: deduct down to 0 and mark invoice as Overdue
                     std::string chargeQuery = std::format(
-                        "UPDATE bank_account SET balance = 0.00 WHERE acc_id = {}",
+                        "UPDATE BANK_ACCOUNT SET balance = 0.00 WHERE acc_id = {}",
                         acc_id
                     );
                     (void)db.executeUpdate(chargeQuery);
@@ -433,12 +471,17 @@ namespace transaction::rental {
         auto detailsRes = db.executeUpdate(detailsQuery);
         if (!detailsRes) return std::unexpected("Failed to update rental details: " + detailsRes.error());
 
-        // 6. Update apparel_item status back to Available
+        // 6. Update apparel_item status and condition
+        // If condition is less than Good (Fair, Poor, or Damaged), route to Laundry
+        std::string nextStatus = (condition == "Excellent" || condition == "Good") ? "Available" : "Laundry";
         std::string itemUpdate = std::format(
-            "UPDATE apparel_item SET status = 'Available' WHERE item_id = {}",
-            item_id
+            "UPDATE apparel_item SET status = '{}', condition_status = '{}' WHERE item_id = {} AND is_deleted = 0",
+            nextStatus, condition, item_id
         );
-        (void)db.executeUpdate(itemUpdate);
+        auto itemUpdateRes = db.executeUpdate(itemUpdate);
+        if (!itemUpdateRes) {
+            return std::unexpected("Failed to update apparel item status/condition: " + itemUpdateRes.error());
+        }
 
         // 7. Update invoices financial summary
         double final_total = base_fee + lateFee + damageFee;
@@ -453,6 +496,27 @@ namespace transaction::rental {
         if (!invoiceRes) return std::unexpected("Failed to settle invoice: " + invoiceRes.error());
 
         // 8. Construct breakdown report for staff review
+        std::string depositSettlementMsg;
+        if (security_deposit <= 0.00) {
+            depositSettlementMsg = "No deposit held.";
+        } else if (totalSurcharges == 0.00) {
+            if (acc_id != -1) {
+                depositSettlementMsg = std::format("RM {:.2f} refunded fully to bank account.", security_deposit);
+            } else {
+                depositSettlementMsg = std::format("RM {:.2f} settled (no linked bank account to refund).", security_deposit);
+            }
+        } else if (refund > 0.00) {
+            if (acc_id != -1) {
+                depositSettlementMsg = std::format("RM {:.2f} refunded (RM {:.2f} forfeited for surcharges).", refund, totalSurcharges);
+            } else {
+                depositSettlementMsg = std::format("RM {:.2f} settled manually (RM {:.2f} forfeited for surcharges).", refund, totalSurcharges);
+            }
+        } else if (extraCharge > 0.00) {
+            depositSettlementMsg = std::format("Deposit of RM {:.2f} forfeited fully. RM {:.2f} extra charged.", security_deposit, extraCharge);
+        } else {
+            depositSettlementMsg = std::format("Deposit of RM {:.2f} forfeited fully.", security_deposit);
+        }
+
         std::string report = std::format(
             "\n  --- RETURN FINANCIAL BREAKDOWN ---\n"
             "  Rental Agreement ID : {}\n"
@@ -466,10 +530,7 @@ namespace transaction::rental {
             "  Deposit Settlement  : {}\n"
             "  Invoice Status      : {}\n",
             rental_id, base_fee, security_deposit, lateDays, lateFee, damageFee,
-            totalSurcharges, 
-            (refund > 0 ? std::format("RM {:.2f} refunded to bank account.", refund) : 
-             (extraCharge > 0 ? std::format("Deposit forfeited. RM {:.2f} extra charged.", extraCharge) : "Deposit forfeited fully.")),
-            settlement_status
+            totalSurcharges, depositSettlementMsg, settlement_status
         );
 
         return report;

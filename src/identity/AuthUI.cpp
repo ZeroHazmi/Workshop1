@@ -134,8 +134,11 @@ namespace identity::authui {
         
         println("");
         tool::helper::drawLine(64, '-');
-        println("\nPress Enter to return to dashboard...");
-        cin.get();
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void manageBankAccount(const ::identity::auth::UserSession& session) {
@@ -185,8 +188,11 @@ namespace identity::authui {
                         cin.ignore(1000, '\n');
                         println("\n  Invalid deposit amount.");
                     }
-                    println("\nPress Enter to return to dashboard...");
-                    cin.get();
+                    string waitInput;
+                    do {
+                        print("\nEnter '0' to return to dashboard: ");
+                        getline(cin, waitInput);
+                    } while (waitInput != "0");
                     return;
                 } else if (option == 2) {
                     cin.ignore(1000, '\n');
@@ -196,8 +202,11 @@ namespace identity::authui {
                     } else {
                         println("\n  Failed to unlink bank account: {}", removeRes.error());
                     }
-                    println("\nPress Enter to return to dashboard...");
-                    cin.get();
+                    string waitInput;
+                    do {
+                        print("\nEnter '0' to return to dashboard: ");
+                        getline(cin, waitInput);
+                    } while (waitInput != "0");
                     return;
                 } else {
                     cin.ignore(1000, '\n');
@@ -235,8 +244,11 @@ namespace identity::authui {
                 } else {
                     println("\n  Failed to link bank account: {}", linkResult.error());
                 }
-                println("\nPress Enter to return to dashboard...");
-                cin.get();
+                string waitInput;
+                do {
+                    print("\nEnter '0' to return to dashboard: ");
+                    getline(cin, waitInput);
+                } while (waitInput != "0");
                 return;
             } else {
                 cin.clear();
@@ -254,8 +266,11 @@ namespace identity::authui {
         auto historyResult = ::transaction::rental::getCustomerRentalHistory(session.userid);
         if (!historyResult) {
             println("  Error: {}", historyResult.error());
-            println("\nPress Enter to return to dashboard...");
-            cin.get();
+            string waitInput;
+            do {
+                print("\nEnter '0' to return to dashboard: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
 
@@ -264,8 +279,11 @@ namespace identity::authui {
             println("  You have no active or past rentals in your history.");
             println("");
             tool::helper::drawLine(75, '-');
-            println("\nPress Enter to return to dashboard...");
-            cin.get();
+            string waitInput;
+            do {
+                print("\nEnter '0' to return to dashboard: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
 
@@ -289,8 +307,11 @@ namespace identity::authui {
         }
 
         tool::helper::drawLine(75, '=');
-        println("\nPress Enter to return to dashboard...");
-        cin.get();
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to dashboard: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void handleRentalHistoryMenu(const ::identity::auth::UserSession& session) {
@@ -341,8 +362,11 @@ namespace identity::authui {
         auto statsRes = ::transaction::rental::getCustomerBookingStats(session.userid);
         if (!statsRes) {
             println("  Error retrieving statistics: {}", statsRes.error());
-            println("\nPress Enter to return to gateway...");
-            cin.get();
+            string waitInput;
+            do {
+                print("\nEnter '0' to return to gateway: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
 
@@ -358,8 +382,11 @@ namespace identity::authui {
             println("  No rental history found. Book some attire first to unlock insights!");
             println("");
             tool::helper::drawLine(60, '-');
-            println("\nPress Enter to return to gateway...");
-            cin.get();
+            string waitInput;
+            do {
+                print("\nEnter '0' to return to gateway: ");
+                getline(cin, waitInput);
+            } while (waitInput != "0");
             return;
         }
 
@@ -449,8 +476,11 @@ namespace identity::authui {
 
         println("");
         tool::helper::drawLine(60, '=');
-        println("\nPress Enter to return to gateway...");
-        cin.get();
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to gateway: ");
+            getline(cin, waitInput);
+        } while (waitInput != "0");
     }
 
     void showAdminDashboard(const ::identity::auth::UserSession& session) {
