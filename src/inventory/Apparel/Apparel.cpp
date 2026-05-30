@@ -145,4 +145,52 @@ namespace inventory::apparel {
         delete res;
         return sizes;
     }
+
+    std::expected<std::vector<ApparelItem>, std::string> getItemsByStatus(std::string_view status) {
+        auto& db = database::DatabaseManager::getInstance();
+        std::string query = std::format(
+            "SELECT item_id, catalog_id, size, status, condition_status FROM apparel_item "
+            "WHERE status = '{}' AND is_deleted = 0",
+            status
+        );
+
+        auto result = db.executeQuery(query);
+        if (!result) return std::unexpected(result.error());
+
+        std::vector<ApparelItem> items;
+        sql::ResultSet* res = result.value();
+        while (res->next()) {
+            ApparelItem item;
+            item.item_id = res->getInt("item_id");
+            item.catalog_id = res->getInt("catalog_id");
+            item.size = res->getString("size");
+            item.status = res->getString("status");
+            item.condition_status = res->getString("condition_status");
+            items.push_back(item);
+        }
+        delete res;
+        return items;
+    }
+
+    std::expected<void, std::string> updateItemCondition(int item_id, std::string_view condition) {
+        auto& db = database::DatabaseManager::getInstance();
+        std::string query = std::format(
+            "UPDATE apparel_item SET condition_status = '{}' WHERE item_id = {} AND is_deleted = 0",
+            condition, item_id
+        );
+        auto result = db.executeUpdate(query);
+        if (!result) return std::unexpected(result.error());
+        return {};
+    }
+
+    std::expected<void, std::string> updateItemStatus(int item_id, std::string_view status) {
+        auto& db = database::DatabaseManager::getInstance();
+        std::string query = std::format(
+            "UPDATE apparel_item SET status = '{}' WHERE item_id = {} AND is_deleted = 0",
+            status, item_id
+        );
+        auto result = db.executeUpdate(query);
+        if (!result) return std::unexpected(result.error());
+        return {};
+    }
 }

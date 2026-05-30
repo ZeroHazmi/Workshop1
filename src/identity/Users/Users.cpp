@@ -243,7 +243,7 @@ void Users::displayAllUsers() {
 	}
 
 	println("\n{:<10} {:<20} {:<20}", "User ID", "Username", "Roles");
-	println("{:-<50}", "");
+	println("{:-<64}", "");
 
 	for (const auto& user : usersResult.value()) {
 		string roles;

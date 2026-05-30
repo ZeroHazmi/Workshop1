@@ -115,7 +115,9 @@ namespace identity::authui {
 
     void viewProfile(const ::identity::auth::UserSession& session) {
         tool::helper::clearScreen();
-        tool::ui::displayTitle("USER PROFILE", 50);
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("USER PROFILE", 64);
+        tool::helper::drawLine(64, '=');
         println(""); // Spacer
 
         auto profileOpt = ::identity::profile::Profile::getCustomerProfile(session.userid);
@@ -131,14 +133,17 @@ namespace identity::authui {
         }
         
         println("");
-        tool::helper::drawLine(50, '-');
+        tool::helper::drawLine(64, '-');
         println("\nPress Enter to return to dashboard...");
         cin.get();
     }
 
     void manageBankAccount(const ::identity::auth::UserSession& session) {
         tool::helper::clearScreen();
-        tool::ui::displayTitle("BANK ACCOUNT DETAILS", 50);
+        tool::helper::drawLine(64, '=');
+        tool::ui::displayTitle("BANK ACCOUNT DETAILS", 64);
+        tool::helper::drawLine(64, '=');
+        
         println(""); // Spacer
 
         auto bankOpt = ::identity::profile::Profile::getBankAccount(session.userid);

@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include <string>
 #include <vector>
@@ -57,4 +56,10 @@ namespace inventory::apparel {
     // Get available sizes and quantities for a given catalog
     std::expected<std::vector<std::pair<std::string, int>>, std::string> getAvailableSizes(int catalog_id);
 
+    // Retrieve items needing laundry/maintenance (from origin/main)
+    std::expected<std::vector<ApparelItem>, std::string> getItemsByStatus(std::string_view status);
+
+    // Update specific item status/condition (from origin/main)
+    std::expected<void, std::string> updateItemCondition(int item_id, std::string_view condition);
+    std::expected<void, std::string> updateItemStatus(int item_id, std::string_view status);
 }
