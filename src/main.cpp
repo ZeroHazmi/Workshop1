@@ -6,6 +6,10 @@
 #include <chrono>
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "DatabaseManager/DatabaseManager.h"
 #include "identity/Auth/Auth.h"
 #include "identity/AuthUI.h"
@@ -17,6 +21,10 @@
 using namespace std;
 
 int main() {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
 
     if (!database::DatabaseManager::getInstance().connect()) {
         println(stderr, "Application failed to start: Database connection error.");
@@ -64,6 +72,9 @@ int main() {
                         // Default to customer dashboard
                         ::identity::authui::handleCustomerDashboard(session);
                     }
+                } else {
+                    tool::helper::clearScreen();
+                    ::identity::authui::showSplashScreen();
                 }
                 break;
             }

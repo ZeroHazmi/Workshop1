@@ -7,6 +7,7 @@
 #include <chrono>
 #include <iostream>
 #include <conio.h>
+#include "tool/helper.h"
 
 using namespace std;
 
@@ -44,6 +45,7 @@ namespace identity::auth {
         auto result = loginUser(user, pass);
         if (!result) {
             println("\nError: {}", result.error());
+            this_thread::sleep_for(chrono::milliseconds(1500));
         }
         return result;
     }
@@ -53,8 +55,13 @@ namespace identity::auth {
         string user, pass;
         
         println("\n--- NEW USER REGISTRATION ---");
-        print("Username: "); 
+        print("Username (or '0' to cancel): "); 
         cin >> user;
+        if (user == "0") {
+            println("\nRegistration cancelled.");
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return;
+        }
         print("Password: ");
         pass = getMaskedPassword();
         cin.ignore(numeric_limits<streamsize>::max(), '\n');

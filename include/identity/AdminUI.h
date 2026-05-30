@@ -14,4 +14,9 @@ namespace identity::adminui {
     void manageShopInformation();
     void displayShopList();
     void viewShopInventory();
+
+    // Submenu gateways
+    void showStaffManagementSubmenu(const ::identity::auth::UserSession& session);
+    void showShopManagementSubmenu(const ::identity::auth::UserSession& session);
+    void showBusinessStatsSubmenu(const ::identity::auth::UserSession& session);
 }
