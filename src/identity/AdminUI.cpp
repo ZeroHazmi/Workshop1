@@ -328,11 +328,10 @@ namespace identity::adminui {
         tool::helper::drawLine(64, '=');
         println("");
 
-        // TODO: Fetch actual admin data from database
         tool::ui::printField("Username", session.username);
         tool::ui::printField("Role", session.roles.front());
-        tool::ui::printField("Admin Email", "admin@utem.edu.my");
-        tool::ui::printField("Department", "System Administration");
+        tool::ui::printField("Admin Email", session.username + "@utem.edu.my");
+        tool::ui::printField("Department", "FWCRS System Administration");
         
         println("");
         tool::helper::drawLine(64, '-');

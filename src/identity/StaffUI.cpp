@@ -588,12 +588,38 @@ namespace identity::staffui {
         tool::helper::drawLine(64, '=');
         println("");
 
-        // TODO: Fetch actual staff data from database
-        tool::ui::printField("Username", session.username);
-        tool::ui::printField("Role", session.roles.front());
-        tool::ui::printField("Staff Email", "staff@utem.edu.my");
-        tool::ui::printField("Department", "Rental Management");
-        tool::ui::printField("Assigned Shop", "Main Shop");
+        auto profileRes = ::identity::profile::Profile::getStaffProfile(session.userid);
+        if (profileRes) {
+            auto staff = profileRes.value();
+            tool::ui::printField("Staff Name", staff.staff_name);
+            tool::ui::printField("Username", session.username);
+            tool::ui::printField("Role", session.roles.front());
+            tool::ui::printField("Position", staff.position);
+            tool::ui::printField("Phone Number", staff.phone_no);
+            
+            // Query shop name dynamically using shop_id
+            std::string shopName = "Not Assigned";
+            if (staff.shop_id > 0) {
+                auto& db = database::DatabaseManager::getInstance();
+                std::string shopQuery = "SELECT shop_name FROM shops WHERE shop_id = " + to_string(staff.shop_id) + ";";
+                auto shopRes = db.executeQuery(shopQuery);
+                if (shopRes) {
+                    sql::ResultSet* srs = shopRes.value();
+                    if (srs->next()) {
+                        shopName = srs->getString("shop_name");
+                    }
+                    delete srs;
+                }
+            }
+            tool::ui::printField("Assigned Shop", shopName);
+        } else {
+            // Graceful fallback to formatted system values if profile is absent
+            tool::ui::printField("Username", session.username);
+            tool::ui::printField("Role", session.roles.front());
+            tool::ui::printField("Staff Email", session.username + "@utem.edu.my");
+            tool::ui::printField("Department", "Rental Management");
+            tool::ui::printField("Assigned Shop", "Not Assigned");
+        }
         
         println("");
         println("  (Note: Contact admin to modify profile information)");
