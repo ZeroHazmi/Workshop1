@@ -50,10 +50,12 @@ int main() {
         int choice;
         // Basic input validation for CLI navigation
         if (!tool::input::readInt(choice)) {
-            println("Invalid input. Please enter a number.");
+            println("  Invalid selection.");
             if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                 tool::helper::clearScreen();
                 ::identity::authui::showSplashScreen();
+            } else {
+                this_thread::sleep_for(chrono::milliseconds(1000));
             }
             continue;
         }
@@ -67,7 +69,7 @@ int main() {
                     auto& session = sessionResult.value();
                     
                     // Route to appropriate dashboard based on role
-                    std::string role = session.roles.front();
+                    string role = session.roles.front();
                     
                     if (role == "admin") {
                         ::identity::adminui::handleAdminDashboard(session);
@@ -95,10 +97,12 @@ int main() {
                 systemRunning = false;
                 break;
             default:
-                println("Invalid selection. Please try again.");
+                println("  Invalid selection.");
                 if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     tool::helper::clearScreen();
                     ::identity::authui::showSplashScreen();
+                } else {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
                 }
         }
     }

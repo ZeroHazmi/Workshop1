@@ -48,8 +48,10 @@ namespace identity::adminui {
             
             int choice;
             if (!tool::input::readInt(choice)) {
-                println("Invalid input. Please enter a number.");
-                tool::ui::handleInvalidAttempt(invalidAttempts);
+                println("  Invalid selection.");
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
                 continue;
             }
 
@@ -83,7 +85,7 @@ namespace identity::adminui {
                     tool::helper::clearScreen();
                     break;
                 default:
-                    println("Invalid option.");
+                    println("  Invalid option.");
                     if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                         this_thread::sleep_for(chrono::milliseconds(1000));
                     }
@@ -616,13 +618,13 @@ namespace identity::adminui {
                         inSubmenu = false;
                         break;
                     default:
-                        println("Invalid option.");
+                        println("  Invalid option.");
                         if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                             this_thread::sleep_for(chrono::milliseconds(1000));
                         }
                 }
             } else {
-                println("Invalid input. Please enter a number.");
+                println("  Invalid selection.");
                 if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     this_thread::sleep_for(chrono::milliseconds(1000));
                 }
@@ -662,13 +664,13 @@ namespace identity::adminui {
                         inSubmenu = false;
                         break;
                     default:
-                        println("Invalid option.");
+                        println("  Invalid option.");
                         if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                             this_thread::sleep_for(chrono::milliseconds(1000));
                         }
                 }
             } else {
-                println("Invalid input. Please enter a number.");
+                println("  Invalid selection.");
                 if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     this_thread::sleep_for(chrono::milliseconds(1000));
                 }
@@ -959,7 +961,13 @@ namespace identity::adminui {
                                 "\033[93m", // Bright Yellow
                                 "\033[94m", // Bright Blue
                                 "\033[92m", // Bright Green
-                                "\033[91m"  // Bright Red
+                                "\033[91m", // Bright Red
+                                "\033[36m", // Cyan
+                                "\033[35m", // Magenta
+                                "\033[33m", // Yellow
+                                "\033[34m", // Blue
+                                "\033[32m", // Green
+                                "\033[31m"  // Red
                             };
                             for (int r = maxRows; r >= 1; --r) {
                                 double threshold = maxRev * (r / (double)maxRows);
@@ -1071,7 +1079,13 @@ namespace identity::adminui {
                                 "\033[93m", // Bright Yellow
                                 "\033[94m", // Bright Blue
                                 "\033[92m", // Bright Green
-                                "\033[91m"  // Bright Red
+                                "\033[91m", // Bright Red
+                                "\033[36m", // Cyan
+                                "\033[35m", // Magenta
+                                "\033[33m", // Yellow
+                                "\033[34m", // Blue
+                                "\033[32m", // Green
+                                "\033[31m"  // Red
                             };
                             size_t cIdx = 0;
                             for (const auto& pt : points) {
@@ -1140,7 +1154,13 @@ namespace identity::adminui {
                                     "\033[93m", // Bright Yellow
                                     "\033[94m", // Bright Blue
                                     "\033[92m", // Bright Green
-                                    "\033[91m"  // Bright Red
+                                    "\033[91m", // Bright Red
+                                    "\033[36m", // Cyan
+                                    "\033[35m", // Magenta
+                                    "\033[33m", // Yellow
+                                    "\033[34m", // Blue
+                                    "\033[32m", // Green
+                                    "\033[31m"  // Red
                                 };
                                 size_t cIdx = 0;
                                 for (const auto& pt : branches) {
@@ -1400,7 +1420,7 @@ namespace identity::adminui {
                 invalidAttempts = 0;
                 inStats = false;
             } else {
-                println("Invalid option.");
+                println("  Invalid option.");
                 if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     this_thread::sleep_for(chrono::milliseconds(1000));
                 }

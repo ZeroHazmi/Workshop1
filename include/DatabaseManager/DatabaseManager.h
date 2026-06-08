@@ -22,11 +22,9 @@ public:
         return instance;
     }
 
-    // Delete copy/assignment for Singleton integrity
     DatabaseManager(const DatabaseManager&) = delete;
     DatabaseManager& operator=(const DatabaseManager&) = delete;
 
-    // C++23 std::expected for robust error handling
     std::expected<void, std::string> connect();
     std::expected<sql::ResultSet*, std::string> executeQuery(std::string_view query);
     std::expected<int, std::string> executeUpdate(std::string_view query);

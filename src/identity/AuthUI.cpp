@@ -74,8 +74,10 @@ namespace identity::authui {
             
             int subChoice;
             if (!tool::input::readInt(subChoice)) {
-                println("Invalid input. Please enter a number.");
-                tool::ui::handleInvalidAttempt(invalidAttempts);
+                println("  Invalid selection.");
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
                 continue;
             }
 
@@ -114,8 +116,10 @@ namespace identity::authui {
 
                     break;
                 default:
-                    println("Invalid option.");
-                    tool::ui::handleInvalidAttempt(invalidAttempts);
+                    println("  Invalid selection.");
+                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
             }
         }
     }
@@ -362,14 +366,20 @@ namespace identity::authui {
             return;
         }
 
-        // Color palette for graphs
+        // Color palette for graphs (12 unique distinct colors)
         const std::vector<std::string> barColors = {
             "\033[96m", // Bright Cyan
             "\033[95m", // Bright Magenta
             "\033[93m", // Bright Yellow
             "\033[94m", // Bright Blue
             "\033[92m", // Bright Green
-            "\033[91m"  // Bright Red
+            "\033[91m", // Bright Red
+            "\033[36m", // Cyan
+            "\033[35m", // Magenta
+            "\033[33m", // Yellow
+            "\033[34m", // Blue
+            "\033[32m", // Green
+            "\033[31m"  // Red
         };
 
         // 1. POPULAR CATEGORIES (Horizontal Bar Chart)
@@ -494,16 +504,6 @@ namespace identity::authui {
         }
 
         tool::ui::pressZeroToReturn("previous menu", 60);
-    }
-
-    void showAdminDashboard(const ::identity::auth::UserSession& session) {
-        // Delegate to admin UI
-        ::identity::adminui::showAdminDashboard(session);
-    }
-
-    void handleAdminDashboard(const ::identity::auth::UserSession& session) {
-        // Delegate to admin UI
-        ::identity::adminui::handleAdminDashboard(session);
     }
 
 }

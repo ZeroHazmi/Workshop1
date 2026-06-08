@@ -49,8 +49,10 @@ namespace identity::staffui {
             
             int choice;
             if (!tool::input::readInt(choice)) {
-                println("Invalid input. Please enter a number.");
-                tool::ui::handleInvalidAttempt(invalidAttempts);
+                println("  Invalid selection.");
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
                 continue;
             }
 
@@ -80,7 +82,7 @@ namespace identity::staffui {
                     tool::helper::clearScreen();
                     break;
                 default:
-                    println("Invalid option.");
+                    println("  Invalid option.");
                     if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                         this_thread::sleep_for(chrono::milliseconds(1000));
                     }
@@ -433,13 +435,13 @@ namespace identity::staffui {
                         inInventoryMenu = false;
                         break;
                     default:
-                        println("Invalid option.");
+                        println("  Invalid option.");
                         if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                             this_thread::sleep_for(chrono::milliseconds(1000));
                         }
                 }
             } else {
-                println("Invalid input. Please enter a number.");
+                println("  Invalid selection.");
                 if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     this_thread::sleep_for(chrono::milliseconds(1000));
                 }
