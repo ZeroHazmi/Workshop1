@@ -63,6 +63,7 @@ namespace inventory::ui {
                 if (promptRetry()) continue;
                 else return false;
             }
+            start = tool::date::normalizeDateStr(start);
 
             if (tool::date::isBeforeToday(start)) {
                 println("\n  Error: Invalid date '{}'. Start date cannot be in the past.", start);
@@ -78,6 +79,7 @@ namespace inventory::ui {
                 if (promptRetry()) continue;
                 else return false;
             }
+            end = tool::date::normalizeDateStr(end);
 
             int total_days = tool::date::getDaysDifference(start, end);
             
@@ -142,6 +144,7 @@ namespace inventory::ui {
       int catalog_id = item.catalog_id;
 
       bool viewingItem = true;
+      int invalidAttempts = 0;
       while (viewingItem) {
         tool::helper::clearScreen();
         tool::ui::displayTitle("ITEM DETAILS", 65);
@@ -178,20 +181,35 @@ namespace inventory::ui {
         if (!(cin >> choice)) {
           cin.clear();
           cin.ignore(1000, '\n');
+          invalidAttempts++;
+          if (invalidAttempts >= 3) {
+              println("\nToo many invalid attempts. Pausing for 5 seconds...");
+              this_thread::sleep_for(chrono::seconds(5));
+              invalidAttempts = 0;
+          }
           continue;
         }
         cin.ignore(1000, '\n');
 
         if (choice == "1" && isCustomer) {
+          invalidAttempts = 0;
           bool exitToCatalog = processRentalCheckout(session, item, catalog_id);
           if (exitToCatalog) {
               viewingItem = false;
           }
         } else if (choice == "0") {
+          invalidAttempts = 0;
           viewingItem = false;
         } else {
           println("  Invalid option.");
-          this_thread::sleep_for(chrono::milliseconds(1000));
+          invalidAttempts++;
+          if (invalidAttempts >= 3) {
+              println("\nToo many invalid attempts. Pausing for 5 seconds...");
+              this_thread::sleep_for(chrono::seconds(5));
+              invalidAttempts = 0;
+          } else {
+              this_thread::sleep_for(chrono::milliseconds(1000));
+          }
         }
       }
     }
@@ -201,6 +219,7 @@ namespace inventory::ui {
       int currentPage = 1;
       const int itemsPerPage = 25;
       string searchTerm = "";
+      int invalidAttempts = 0;
 
       while (inCatalog) {
         auto countRes = inventory::apparel::getTotalApparelsCount(searchTerm);
@@ -219,7 +238,7 @@ namespace inventory::ui {
         }
         println("");
 
-        vector<int> colWidths = {12, 29, 12, 12, 10};
+        vector<int> colWidths = {12, 24, 19, 10, 10};
 
         // Header Row
         tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "CATEGORY", "PRICE/DAY", "AVAILABLE"});
@@ -264,24 +283,53 @@ namespace inventory::ui {
         if (!(cin >> choice)) {
           cin.clear();
           cin.ignore(1000, '\n');
+          invalidAttempts++;
+          if (invalidAttempts >= 3) {
+              println("\nToo many invalid attempts. Pausing for 5 seconds...");
+              this_thread::sleep_for(chrono::seconds(5));
+              invalidAttempts = 0;
+          }
           continue;
         }
         cin.ignore(1000, '\n');
 
-        if (choice == "0") {
-          inCatalog = false;
-        } else if (choice == "N" || choice == "n") {
-          if (currentPage < totalPages)
-            currentPage++;
-        } else if (choice == "P" || choice == "p") {
-          if (currentPage > 1)
-            currentPage--;
-        } else if (choice == "S" || choice == "s") {
-          print("  Enter search query (or press Enter to clear): ");
-          getline(cin, searchTerm);
-          currentPage = 1;
+        bool validChoice = false;
+        if (choice == "0" || choice == "N" || choice == "n" || choice == "P" || choice == "p" || choice == "S" || choice == "s") {
+            validChoice = true;
         } else {
-          showItemDetails(session, choice);
+            auto itemOpt = inventory::apparel::getApparelByUniqueId(choice);
+            if (itemOpt) {
+                validChoice = true;
+            }
+        }
+
+        if (validChoice) {
+            invalidAttempts = 0;
+            if (choice == "0") {
+              inCatalog = false;
+            } else if (choice == "N" || choice == "n") {
+              if (currentPage < totalPages)
+                currentPage++;
+            } else if (choice == "P" || choice == "p") {
+              if (currentPage > 1)
+                currentPage--;
+            } else if (choice == "S" || choice == "s") {
+              print("  Enter search query (or press Enter to clear): ");
+              getline(cin, searchTerm);
+              currentPage = 1;
+            } else {
+              showItemDetails(session, choice);
+            }
+        } else {
+            println("  Invalid option or Item ID not found.");
+            invalidAttempts++;
+            if (invalidAttempts >= 3) {
+                println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                this_thread::sleep_for(chrono::seconds(5));
+                invalidAttempts = 0;
+            } else {
+                this_thread::sleep_for(chrono::milliseconds(1000));
+            }
         }
       }
     }

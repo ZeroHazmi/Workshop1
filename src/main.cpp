@@ -37,6 +37,7 @@ int main() {
     // Formal Landing Screen
     ::identity::authui::showSplashScreen();
 
+    int invalidAttempts = 0;
     bool systemRunning = true;
     while (systemRunning) {
         println("\n--- MAIN GATEWAY ---");
@@ -51,12 +52,21 @@ int main() {
             cin.clear();
             cin.ignore(1000, '\n');
             println("Invalid input. Please enter a number.");
+            invalidAttempts++;
+            if (invalidAttempts >= 3) {
+                println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                this_thread::sleep_for(chrono::seconds(5));
+                invalidAttempts = 0;
+                tool::helper::clearScreen();
+                ::identity::authui::showSplashScreen();
+            }
             continue;
         }
 
         switch (choice) {
             case 1:
             {
+                invalidAttempts = 0;
                 auto sessionResult = authService.handleLoginFlow();
                 if (sessionResult) {
                     auto& session = sessionResult.value();
@@ -80,15 +90,25 @@ int main() {
             }
                 
             case 2:
+                invalidAttempts = 0;
                 // handleRegisterFlow handles all registration inputs and DB logic
                 authService.handleRegisterFlow("customer");
                 break;
             case 3:
+                invalidAttempts = 0;
                 println("Shutting down FWCRS. Goodbye.");
                 systemRunning = false;
                 break;
             default:
                 println("Invalid selection. Please try again.");
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                    tool::helper::clearScreen();
+                    ::identity::authui::showSplashScreen();
+                }
         }
     }
     return 0;

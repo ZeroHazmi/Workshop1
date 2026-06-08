@@ -42,6 +42,7 @@ namespace identity::staffui {
 
     void handleStaffDashboard(const ::identity::auth::UserSession& session) {
         bool inStaffPanel = true;
+        int invalidAttempts = 0;
         while (inStaffPanel) {
             showStaffDashboard(session);
             
@@ -49,21 +50,31 @@ namespace identity::staffui {
             if (!(cin >> choice)) {
                 cin.clear();
                 cin.ignore(1000, '\n');
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                }
                 continue;
             }
             cin.ignore(1000, '\n');  // Clear input buffer
 
             switch (choice) {
                 case 1:
+                    invalidAttempts = 0;
                     manageApparelInventory(session);
                     break;
                 case 2:
+                    invalidAttempts = 0;
                     manageRentalsAndReturns(session);
                     break;
                 case 3:
+                    invalidAttempts = 0;
                     viewStaffProfile(session);
                     break;
                 case 0:
+                    invalidAttempts = 0;
                     println("\nLogging out...");
                     inStaffPanel = false;
 
@@ -76,6 +87,12 @@ namespace identity::staffui {
                     break;
                 default:
                     println("Invalid option.");
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    }
             }
         }
     }
@@ -420,6 +437,7 @@ namespace identity::staffui {
 
     void manageApparelInventory(const ::identity::auth::UserSession& session) {
         bool inInventoryMenu = true;
+        int invalidAttempts = 0;
         while (inInventoryMenu) {
             tool::helper::clearScreen();
             tool::helper::drawLine(64, '=');
@@ -441,32 +459,51 @@ namespace identity::staffui {
             if (!(cin >> choice)) {
                 cin.clear();
                 cin.ignore(1000, '\n');
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                }
                 continue;
             }
             cin.ignore(1000, '\n');
             
             switch(choice) {
                 case 1:
+                    invalidAttempts = 0;
                     inventory::ui::registerNewApparel(session);
                     break;
                 case 2:
+                    invalidAttempts = 0;
                     inventory::ui::showCatalog(session);
                     break;
                 case 3:
+                    invalidAttempts = 0;
                     updateConditionFlow();
                     break;
                 case 4:
+                    invalidAttempts = 0;
                     processLaundryFlow();
                     break;
                 case 5:
+                    invalidAttempts = 0;
                     retireApparelFlow();
                     break;
                 case 0:
+                    invalidAttempts = 0;
                     inInventoryMenu = false;
                     break;
                 default:
                     println("Invalid option.");
-                    this_thread::sleep_for(chrono::milliseconds(1000));
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
             }
         }
     }
@@ -476,6 +513,7 @@ namespace identity::staffui {
         string searchTerm = "";
         int currentPage = 1;
         const int itemsPerPage = 25;
+        int invalidAttempts = 0;
 
         while (inRentalsMenu) {
             tool::helper::clearScreen();
@@ -544,16 +582,21 @@ namespace identity::staffui {
                 getline(cin, input);
 
                 if (input == "0") {
+                    invalidAttempts = 0;
                     inRentalsMenu = false;
                 } else if (input == "N" || input == "n") {
+                    invalidAttempts = 0;
                     if (currentPage < totalPages) currentPage++;
                 } else if (input == "P" || input == "p") {
+                    invalidAttempts = 0;
                     if (currentPage > 1) currentPage--;
                 } else if (input == "S" || input == "s") {
+                    invalidAttempts = 0;
                     print("  Enter search query (Customer or Apparel name): ");
                     getline(cin, searchTerm);
                     currentPage = 1;
                 } else if (input == "R" || input == "r") {
+                    invalidAttempts = 0;
                     // Inline Check-in costume return flow!
                     println("\n  --- PROCESS COSTUME RETURN ---");
                     string rentalIdInput;
@@ -570,6 +613,7 @@ namespace identity::staffui {
                         getline(cin, returnDate);
                         if (returnDate == "0") break;
                         if (tool::date::isValidFormat(returnDate)) {
+                            returnDate = tool::date::normalizeDateStr(returnDate);
                             break;
                         }
                         println("  [Error] Invalid date format. Please use DD/MM/YYYY.");
@@ -583,10 +627,17 @@ namespace identity::staffui {
                         getline(cin, condition);
                         if (condition == "0") break;
                         
-                        if (condition == "Excellent" || condition == "Good" || condition == "Fair" || condition == "Poor" || condition == "Damaged") {
-                            break;
+                        // normalize
+                        if (condition == "excellent" || condition == "Excellent") condition = "Excellent";
+                        else if (condition == "good" || condition == "Good") condition = "Good";
+                        else if (condition == "fair" || condition == "Fair") condition = "Fair";
+                        else if (condition == "poor" || condition == "Poor") condition = "Poor";
+                        else if (condition == "damaged" || condition == "Damaged") condition = "Damaged";
+                        else {
+                            println("  [Error] Invalid condition. Use Excellent/Good/Fair/Poor/Damaged.");
+                            continue;
                         }
-                        println("  [Error] Invalid condition. Must be Excellent, Good, Fair, Poor, or Damaged.");
+                        break;
                     }
                     if (condition == "0") continue;
 
@@ -604,7 +655,14 @@ namespace identity::staffui {
                     } while (waitInput != "0");
                 } else {
                     println("  Invalid choice.");
-                    this_thread::sleep_for(chrono::milliseconds(1000));
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
                 }
             } else {
                 println("  Error retrieving active rentals: {}", result.error());

@@ -41,6 +41,7 @@ namespace identity::adminui {
 
     void handleAdminDashboard(const ::identity::auth::UserSession& session) {
         bool inAdminPanel = true;
+        int invalidAttempts = 0;
         while (inAdminPanel) {
             showAdminDashboard(session);
             
@@ -48,24 +49,35 @@ namespace identity::adminui {
             if (!(cin >> choice)) {
                 cin.clear();
                 cin.ignore(1000, '\n');
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                }
                 continue;
             }
             cin.ignore(1000, '\n');  // Clear input buffer
 
             switch (choice) {
                 case 1:
+                    invalidAttempts = 0;
                     showStaffManagementSubmenu(session);
                     break;
                 case 2:
+                    invalidAttempts = 0;
                     showShopManagementSubmenu(session);
                     break;
                 case 3:
+                    invalidAttempts = 0;
                     showBusinessStatsSubmenu(session);
                     break;
                 case 4:
+                    invalidAttempts = 0;
                     viewAdminProfile(session);
                     break;
                 case 0:
+                    invalidAttempts = 0;
                     println("\nLogging out...");
                     inAdminPanel = false;
 
@@ -78,7 +90,14 @@ namespace identity::adminui {
                     break;
                 default:
                     println("Invalid option.");
-                    this_thread::sleep_for(chrono::milliseconds(1000));
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
             }
         }
     }
@@ -629,6 +648,7 @@ namespace identity::adminui {
 
     void showStaffManagementSubmenu(const ::identity::auth::UserSession& session) {
         bool inSubmenu = true;
+        int invalidAttempts = 0;
         while (inSubmenu) {
             tool::helper::clearScreen();
             tool::helper::drawLine(64, '=');
@@ -645,29 +665,46 @@ namespace identity::adminui {
             if (!(cin >> choice)) {
                 cin.clear();
                 cin.ignore(1000, '\n');
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                }
                 continue;
             }
             cin.ignore(1000, '\n');
 
             switch (choice) {
                 case 1:
+                    invalidAttempts = 0;
                     registerStaffAccount();
                     break;
                 case 2:
+                    invalidAttempts = 0;
                     manageStaffAccount();
                     break;
                 case 0:
+                    invalidAttempts = 0;
                     inSubmenu = false;
                     break;
                 default:
-                    println("Invalid option. Press Enter to continue...");
-                    cin.get();
+                    println("Invalid option.");
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
             }
         }
     }
 
     void showShopManagementSubmenu(const ::identity::auth::UserSession& session) {
         bool inSubmenu = true;
+        int invalidAttempts = 0;
         while (inSubmenu) {
             tool::helper::clearScreen();
             tool::helper::drawLine(64, '=');
@@ -685,26 +722,43 @@ namespace identity::adminui {
             if (!(cin >> choice)) {
                 cin.clear();
                 cin.ignore(1000, '\n');
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                }
                 continue;
             }
             cin.ignore(1000, '\n');
 
             switch (choice) {
                 case 1:
+                    invalidAttempts = 0;
                     registerNewShop();
                     break;
                 case 2:
+                    invalidAttempts = 0;
                     manageShopInformation();
                     break;
                 case 3:
+                    invalidAttempts = 0;
                     viewShopInventory();
                     break;
                 case 0:
+                    invalidAttempts = 0;
                     inSubmenu = false;
                     break;
                 default:
-                    println("Invalid option. Press Enter to continue...");
-                    cin.get();
+                    println("Invalid option.");
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
             }
         }
     }
@@ -916,6 +970,7 @@ namespace identity::adminui {
         }
         
         bool inStats = true;
+        int invalidAttempts = 0;
         while (inStats) {
             tool::helper::clearScreen();
             tool::helper::drawLine(64, '=');
@@ -939,6 +994,7 @@ namespace identity::adminui {
             println("  [2] Costume Popularity & Demand");
             println("  [3] Branch Performance & Revenue Share");
             println("  [4] Inventory Quality Audit");
+            println("  [5] View Invoice Ledger");
             println("  [F] Toggle/Edit Branch Filters");
             println("  [T] Toggle/Edit Time Range");
             println("  [0] Return to Dashboard");
@@ -952,6 +1008,7 @@ namespace identity::adminui {
             choiceStr.erase(choiceStr.find_last_not_of(" \t\r\n") + 1);
 
             if (choiceStr == "1") {
+                invalidAttempts = 0;
                 bool inReport = true;
                 while (inReport) {
                     tool::helper::clearScreen();
@@ -987,13 +1044,25 @@ namespace identity::adminui {
                             }
 
                             // Print vertical bar chart
+                            println("  Total (RM)");
                             int maxRows = 10;
+                            const std::vector<std::string> barColors = {
+                                "\033[96m", // Bright Cyan
+                                "\033[95m", // Bright Magenta
+                                "\033[93m", // Bright Yellow
+                                "\033[94m", // Bright Blue
+                                "\033[92m", // Bright Green
+                                "\033[91m"  // Bright Red
+                            };
                             for (int r = maxRows; r >= 1; --r) {
                                 double threshold = maxRev * (r / (double)maxRows);
                                 std::print("  {:9.2f} | ", threshold);
+                                size_t cIdx = 0;
                                 for (const auto& pt : trends) {
+                                    std::string color = barColors[cIdx % barColors.size()];
+                                    cIdx++;
                                     if (pt.revenue >= threshold && pt.revenue > 0.0) {
-                                        std::print("   ███   ");
+                                        std::print("   {}{}{}   ", color, "███", "\033[0m");
                                     } else {
                                         std::print("         ");
                                     }
@@ -1017,6 +1086,13 @@ namespace identity::adminui {
                                 std::print("  {:^6} ", displayMonth);
                             }
                             print("\n\n");
+
+                            // Print X-axis label centered
+                            int xLabelWidth = 9 * static_cast<int>(trends.size());
+                            int xLabelPad = 13 + (xLabelWidth - 6) / 2;
+                            if (xLabelPad < 0) xLabelPad = 0;
+                            println("{}{}", string(xLabelPad, ' '), "Months");
+                            println("");
 
                             // Tabular details
                             tool::helper::drawLine(64, '-');
@@ -1074,17 +1150,37 @@ namespace identity::adminui {
                                 if (pt.rental_count > maxCount) maxCount = pt.rental_count;
                             }
 
+                            size_t maxCatalogNameLen = 25; // default minimum
+                            for (const auto& pt : points) {
+                                if (pt.catalog_name.length() > maxCatalogNameLen) {
+                                    maxCatalogNameLen = pt.catalog_name.length();
+                                }
+                            }
+
                             println("  Top Popular Costumes by Rental Volume:");
                             println("");
 
                             int maxBarWidth = 25;
+                            const std::vector<std::string> barColors = {
+                                "\033[96m", // Bright Cyan
+                                "\033[95m", // Bright Magenta
+                                "\033[93m", // Bright Yellow
+                                "\033[94m", // Bright Blue
+                                "\033[92m", // Bright Green
+                                "\033[91m"  // Bright Red
+                            };
+                            size_t cIdx = 0;
                             for (const auto& pt : points) {
                                 int barWidth = maxCount > 0 ? (pt.rental_count * maxBarWidth / maxCount) : 0;
                                 string unicodeBar = "";
                                 for (int i = 0; i < barWidth; ++i) {
                                     unicodeBar += "█";
                                 }
-                                print("{}\n", format("  {:<25} | {:<25} ({} rentals)", pt.catalog_name, unicodeBar, pt.rental_count));
+                                string spaces(maxBarWidth - barWidth, ' ');
+                                string color = barColors[cIdx % barColors.size()];
+                                cIdx++;
+                                std::print("  {:<{}} | {}{}{} ({} rentals)\n", 
+                                           pt.catalog_name, maxCatalogNameLen, color, unicodeBar + spaces, "\033[0m", pt.rental_count);
                             }
                             println("");
                             tool::helper::drawLine(64, '=');
@@ -1137,6 +1233,15 @@ namespace identity::adminui {
                             print("{}\n\n", format("  Total Combined Revenue: RM {:.2f}", totalRevenue));
                             
                             if (totalRevenue > 0.0) {
+                                const std::vector<std::string> barColors = {
+                                    "\033[96m", // Bright Cyan
+                                    "\033[95m", // Bright Magenta
+                                    "\033[93m", // Bright Yellow
+                                    "\033[94m", // Bright Blue
+                                    "\033[92m", // Bright Green
+                                    "\033[91m"  // Bright Red
+                                };
+                                size_t cIdx = 0;
                                 for (const auto& pt : branches) {
                                     double pct = (pt.revenue / totalRevenue) * 100.0;
                                     int barChars = (int)(pct / 2.5); // 40 chars total
@@ -1145,8 +1250,11 @@ namespace identity::adminui {
                                     string remStr = "";
                                     for (int i = 0; i < (40 - barChars); ++i) remStr += "░";
                                     
-                                    print("{}\n", format("  {:<20} [ {}{} ] {:5.1f}% (RM {:.2f})", 
-                                        pt.shop_name, barStr, remStr, pct, pt.revenue));
+                                    string color = barColors[cIdx % barColors.size()];
+                                    cIdx++;
+                                    
+                                    std::print("  {:<20} [ {}{}{}{} ] {:5.1f}% (RM {:.2f})\n", 
+                                        pt.shop_name, color, barStr, "\033[0m", remStr, pct, pt.revenue);
                                 }
                             } else {
                                 println("  No revenue generated yet.");
@@ -1226,15 +1334,198 @@ namespace identity::adminui {
                         updateActiveFilters(activeShopIds, activeShopNames);
                     }
                 }
+            } else if (choiceStr == "5") {
+                invalidAttempts = 0;
+                bool inLedger = true;
+                string statusFilter = "ALL"; // ALL, Paid, Settled, Overdue
+                int currentPage = 1;
+                const int itemsPerPage = 15;
+                int invalidAttemptsLedger = 0;
+
+                while (inLedger) {
+                    tool::helper::clearScreen();
+                    tool::helper::drawLine(118, '=');
+                    tool::ui::displayTitle("INVOICE LEDGER & AUDITING", 118);
+                    tool::helper::drawLine(118, '=');
+
+                    // Filter Status
+                    if (activeShopIds.empty()) {
+                        print("  Active Filter: All Shops");
+                    } else {
+                        print("  Active Filter: ");
+                        for (size_t i = 0; i < activeShopNames.size(); ++i) {
+                            print("{}", activeShopNames[i]);
+                            if (i + 1 < activeShopNames.size()) print(", ");
+                        }
+                    }
+                    print(" | Status: {}\n", statusFilter);
+                    println("");
+
+                    auto& db = database::DatabaseManager::getInstance();
+
+                    // Count total matching records for pagination
+                    std::string countQuery = "SELECT COUNT(*) FROM invoices inv JOIN rental r ON inv.rental_id = r.rental_id WHERE 1=1";
+                    if (!activeShopIds.empty()) {
+                        std::string shopFilterStr = "";
+                        for (size_t i = 0; i < activeShopIds.size(); ++i) {
+                            shopFilterStr += to_string(activeShopIds[i]);
+                            if (i + 1 < activeShopIds.size()) shopFilterStr += ",";
+                        }
+                        countQuery += std::format(" AND r.shop_id IN ({})", shopFilterStr);
+                    }
+                    if (statusFilter != "ALL") {
+                        countQuery += std::format(" AND inv.payment_status = '{}'", statusFilter);
+                    }
+
+                    int totalItems = 0;
+                    auto countRes = db.executeQuery(countQuery);
+                    if (countRes) {
+                        sql::ResultSet* rs = countRes.value();
+                        if (rs->next()) {
+                            totalItems = rs->getInt(1);
+                        }
+                        delete rs;
+                    }
+
+                    int totalPages = totalItems == 0 ? 1 : (totalItems + itemsPerPage - 1) / itemsPerPage;
+                    if (currentPage > totalPages) currentPage = totalPages;
+                    if (currentPage < 1) currentPage = 1;
+
+                    // Header
+                    std::vector<int> colWidths = {12, 12, 18, 9, 9, 9, 9, 18};
+                    tool::ui::printRow(colWidths, {"INV ID", "RENTAL ID", "CUSTOMER NAME", "BASE", "DEPOSIT", "LATE FEE", "TOTAL DUE", "STATUS"});
+                    tool::helper::drawLine(118, '-');
+
+                    // Fetch records
+                    int offset = (currentPage - 1) * itemsPerPage;
+                    std::string selectQuery = 
+                        "SELECT inv.unique_id AS inv_uid, r.unique_id AS rnt_uid, cust.fullname AS customer_name, "
+                        "       inv.base_fee, inv.security_deposit, inv.late_fee, inv.total_amount, inv.payment_status "
+                        "FROM invoices inv "
+                        "JOIN rental r ON inv.rental_id = r.rental_id "
+                        "JOIN customers cust ON r.cust_id = cust.cust_id "
+                        "WHERE 1=1";
+
+                    if (!activeShopIds.empty()) {
+                        std::string shopFilterStr = "";
+                        for (size_t i = 0; i < activeShopIds.size(); ++i) {
+                            shopFilterStr += to_string(activeShopIds[i]);
+                            if (i + 1 < activeShopIds.size()) shopFilterStr += ",";
+                        }
+                        selectQuery += std::format(" AND r.shop_id IN ({})", shopFilterStr);
+                    }
+                    if (statusFilter != "ALL") {
+                        selectQuery += std::format(" AND inv.payment_status = '{}'", statusFilter);
+                    }
+                    selectQuery += std::format(" ORDER BY inv.invoice_id DESC LIMIT {} OFFSET {}", itemsPerPage, offset);
+
+                    auto selectRes = db.executeQuery(selectQuery);
+                    if (selectRes) {
+                        sql::ResultSet* rs = selectRes.value();
+                        while (rs->next()) {
+                            double base = rs->getDouble("base_fee");
+                            double dep = rs->getDouble("security_deposit");
+                            double late = rs->getDouble("late_fee");
+                            double tot = rs->getDouble("total_amount");
+                            std::string status = rs->getString("payment_status");
+
+                            tool::ui::printRow(colWidths, {
+                                rs->getString("inv_uid"),
+                                rs->getString("rnt_uid"),
+                                rs->getString("customer_name"),
+                                format("RM {:.2f}", base),
+                                format("RM {:.2f}", dep),
+                                format("RM {:.2f}", late),
+                                format("RM {:.2f}", tot),
+                                status
+                            });
+                        }
+                        delete rs;
+                    } else {
+                        println("  Error fetching invoice ledger: {}", selectRes.error());
+                    }
+
+                    tool::helper::drawLine(118, '=');
+
+                    // Pagination details
+                    if (totalPages > 1) {
+                        string pageInfo = format("Page {} of {} | Total: {}", currentPage, totalPages, totalItems);
+                        int padding = (118 - static_cast<int>(pageInfo.length())) / 2;
+                        string spaces(padding > 0 ? padding : 0, ' ');
+                        println("{}{}", spaces, pageInfo);
+                        tool::helper::drawLine(118, '-');
+                        println("  [N] Next Page      [P] Previous Page");
+                    }
+                    println("  [F] Filter Status  [0] Back to Reports Gateway");
+                    tool::helper::drawLine(118, '-');
+                    print("  Enter selection: ");
+
+                    string ledgerInput;
+                    getline(cin, ledgerInput);
+
+                    if (ledgerInput == "0") {
+                        invalidAttemptsLedger = 0;
+                        inLedger = false;
+                    } else if (ledgerInput == "N" || ledgerInput == "n") {
+                        invalidAttemptsLedger = 0;
+                        if (currentPage < totalPages) currentPage++;
+                    } else if (ledgerInput == "P" || ledgerInput == "p") {
+                        invalidAttemptsLedger = 0;
+                        if (currentPage > 1) currentPage--;
+                    } else if (ledgerInput == "F" || ledgerInput == "f") {
+                        invalidAttemptsLedger = 0;
+                        println("\n  Select Status Filter:");
+                        println("  [1] All Invoices");
+                        println("  [2] Paid (Active Rentals)");
+                        println("  [3] Settled (Completed Returns)");
+                        println("  [4] Overdue (Outstanding Surcharges)");
+                        print("  Enter choice: ");
+                        string fChoice;
+                        getline(cin, fChoice);
+                        if (fChoice == "1") statusFilter = "ALL";
+                        else if (fChoice == "2") statusFilter = "Paid";
+                        else if (fChoice == "3") statusFilter = "Settled";
+                        else if (fChoice == "4") statusFilter = "Overdue";
+                        currentPage = 1;
+                    } else {
+                        println("  Invalid choice.");
+                        invalidAttemptsLedger++;
+                        if (invalidAttemptsLedger >= 3) {
+                            println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                            this_thread::sleep_for(chrono::seconds(5));
+                            invalidAttemptsLedger = 0;
+                        } else {
+                            this_thread::sleep_for(chrono::milliseconds(1000));
+                        }
+                    }
+                }
+            } else if (choiceStr == "2") {
+                invalidAttempts = 0;
+            } else if (choiceStr == "3") {
+                invalidAttempts = 0;
+            } else if (choiceStr == "4") {
+                invalidAttempts = 0;
+            } else if (choiceStr == "5") {
+                invalidAttempts = 0;
             } else if (choiceStr == "F" || choiceStr == "f") {
+                invalidAttempts = 0;
                 updateActiveFilters(activeShopIds, activeShopNames);
             } else if (choiceStr == "T" || choiceStr == "t") {
+                invalidAttempts = 0;
                 updateActiveDateRange(activeDateRange, activeDateRangeLabel);
             } else if (choiceStr == "0") {
+                invalidAttempts = 0;
                 inStats = false;
             } else {
-                println("Invalid option. Press Enter to continue...");
-                cin.get();
+                println("Invalid option.");
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                } else {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
             }
         }
     }
