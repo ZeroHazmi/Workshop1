@@ -10,7 +10,7 @@ namespace identity::profile {
 // ========== CUSTOMER PROFILE MANAGEMENT ==========
 
 expected<CustomerProfile, string> Profile::getCustomerProfile(int user_id) {
-	string query = "SELECT cust_id, user_id, fullname, email, phone_no FROM CUSTOMERS WHERE user_id = " 
+	string query = "SELECT cust_id, unique_id, user_id, fullname, email, phone_no FROM CUSTOMERS WHERE user_id = " 
 					   + to_string(user_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
@@ -23,6 +23,7 @@ expected<CustomerProfile, string> Profile::getCustomerProfile(int user_id) {
 	if (rs->next()) {
 		CustomerProfile customer;
 		customer.cust_id = rs->getInt("cust_id");
+		customer.unique_id = rs->getString("unique_id");
 		customer.user_id = rs->getInt("user_id");
 		customer.fullname = rs->getString("fullname");
 		customer.email = rs->getString("email");
@@ -59,7 +60,7 @@ expected<bool, string> Profile::updateCustomerProfile(
 // ========== STAFF PROFILE MANAGEMENT ==========
 
 expected<StaffProfile, string> Profile::getStaffProfile(int user_id) {
-	string query = "SELECT staff_id, user_id, shop_id, staff_name, position, phone_no FROM STAFF WHERE user_id = " 
+	string query = "SELECT staff_id, unique_id, user_id, shop_id, staff_name, position, phone_no FROM STAFF WHERE user_id = " 
 				   + to_string(user_id) + ";";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
@@ -72,6 +73,7 @@ expected<StaffProfile, string> Profile::getStaffProfile(int user_id) {
 	if (rs->next()) {
 		StaffProfile staff;
 		staff.staff_id = rs->getInt("staff_id");
+		staff.unique_id = rs->getString("unique_id");
 		staff.user_id = rs->getInt("user_id");
 		staff.shop_id = rs->getInt("shop_id");
 		staff.staff_name = rs->getString("staff_name");
@@ -109,7 +111,7 @@ expected<bool, string> Profile::updateStaffProfile(
 // ========== BANK ACCOUNT MANAGEMENT ==========
 
 expected<BankAccount, string> Profile::getBankAccount(int user_id) {
-	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
+	string query = "SELECT acc_id, unique_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
 				   + to_string(user_id) + " AND is_deleted = 0 LIMIT 1;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
@@ -122,6 +124,7 @@ expected<BankAccount, string> Profile::getBankAccount(int user_id) {
 	if (rs->next()) {
 		BankAccount account;
 		account.acc_id = rs->getInt("acc_id");
+		account.unique_id = rs->getString("unique_id");
 		account.user_id = rs->getInt("user_id");
 		account.bank_name = rs->getString("bank_name");
 		account.acc_number = rs->getString("acc_number");
@@ -138,7 +141,7 @@ expected<BankAccount, string> Profile::getBankAccount(int user_id) {
 
 expected<vector<BankAccount>, string> Profile::getAllBankAccounts(int user_id) {
 	vector<BankAccount> accounts;
-	string query = "SELECT acc_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
+	string query = "SELECT acc_id, unique_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
 					   + to_string(user_id) + " AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
@@ -151,6 +154,7 @@ expected<vector<BankAccount>, string> Profile::getAllBankAccounts(int user_id) {
 	while (rs->next()) {
 		BankAccount account;
 		account.acc_id = rs->getInt("acc_id");
+		account.unique_id = rs->getString("unique_id");
 		account.user_id = rs->getInt("user_id");
 		account.bank_name = rs->getString("bank_name");
 		account.acc_number = rs->getString("acc_number");
@@ -176,11 +180,14 @@ expected<int, string> Profile::linkBankAccount(
 		return unexpected("User already has a bank account linked.");
 	}
 
-	string query = "INSERT INTO BANK_ACCOUNT (user_id, bank_name, acc_number, acc_holder) VALUES (" +
+	string uniqueId = database::DatabaseManager::generateUniqueId("ACC");
+
+	string query = "INSERT INTO BANK_ACCOUNT (user_id, bank_name, acc_number, acc_holder, unique_id) VALUES (" +
 					   to_string(user_id) + ", '" +
 					   string(bank_name) + "', '" +
 					   string(acc_number) + "', '" +
-					   string(acc_holder) + "');";
+					   string(acc_holder) + "', '" +
+					   uniqueId + "');";
 
 	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
 

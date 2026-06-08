@@ -152,6 +152,7 @@ namespace identity::authui {
         auto bankOpt = ::identity::profile::Profile::getBankAccount(session.userid);
         if (bankOpt) {
             auto& bank = bankOpt.value();
+            tool::ui::printField("Account ID", bank.unique_id);
             tool::ui::printField("Account Holder", bank.acc_holder);
             tool::ui::printField("Bank Name", bank.bank_name);
             
@@ -288,7 +289,7 @@ namespace identity::authui {
         }
 
         // Print header for the table
-        std::vector<int> colWidths = {5, 20, 10, 10, 10, 10};
+        std::vector<int> colWidths = {12, 22, 10, 11, 10, 10};
         tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "RENT DATE", "RET DATE", "PAID FEE", "STATUS"});
         tool::helper::drawLine(75, '-');
 
@@ -297,7 +298,7 @@ namespace identity::authui {
             std::string actualRet = item.actual_return_date;
             
             tool::ui::printRow(colWidths, {
-                to_string(item.rental_id),
+                item.unique_id,
                 item.item_name,
                 item.rental_date,
                 actualRet,
@@ -364,7 +365,7 @@ namespace identity::authui {
             println("  Error retrieving statistics: {}", statsRes.error());
             string waitInput;
             do {
-                print("\nEnter '0' to return to gateway: ");
+                print("\nEnter '0' to return to previous menu: ");
                 getline(cin, waitInput);
             } while (waitInput != "0");
             return;
@@ -384,7 +385,7 @@ namespace identity::authui {
             tool::helper::drawLine(60, '-');
             string waitInput;
             do {
-                print("\nEnter '0' to return to gateway: ");
+                print("\nEnter '0' to return to previous menu: ");
                 getline(cin, waitInput);
             } while (waitInput != "0");
             return;
@@ -394,12 +395,16 @@ namespace identity::authui {
         println("  [1] CATEGORY POPULARITY");
         println("  --------------------------------------------------------");
         int maxCount = stats.categories.empty() ? 0 : stats.categories[0].count;
+        int maxBarWidth = 25;
         for (const auto& cat : stats.categories) {
             int percentage = (cat.count * 100) / totalRentals;
-            int barWidth = maxCount > 0 ? (cat.count * 15) / maxCount : 0;
-            std::string bar = std::string(barWidth, '#'); // ASCII solid bar
-            std::string spaces = std::string(15 - barWidth, ' ');
-            println("  {:<15} : [{}{}] {}% ({})", cat.category, bar, spaces, percentage, cat.count);
+            int barWidth = maxCount > 0 ? (cat.count * maxBarWidth) / maxCount : 0;
+            std::string bar = "";
+            for (int i = 0; i < barWidth; ++i) {
+                bar += "█";
+            }
+            std::string spaces = std::string(maxBarWidth - barWidth, ' ');
+            println("  {:<20} : [ {}{} ] {}% ({} rentals)", cat.category, bar, spaces, percentage, cat.count);
         }
         println("");
 
@@ -412,13 +417,15 @@ namespace identity::authui {
         int sumReturn = onTimeTotal + lateTotal;
 
         if (sumReturn > 0) {
-            int onTimeBar = (onTimeTotal * 30) / sumReturn;
-            int lateBar = 30 - onTimeBar;
-            std::string onTimeStr = std::string(onTimeBar, '=');
-            std::string lateStr = std::string(lateBar, 'x');
+            int onTimeBar = (onTimeTotal * 40) / sumReturn; // 40 chars total
+            int lateBar = 40 - onTimeBar;
+            std::string onTimeStr = "";
+            for (int i = 0; i < onTimeBar; ++i) onTimeStr += "█";
+            std::string lateStr = "";
+            for (int i = 0; i < lateBar; ++i) lateStr += "░";
             
-            println("  Split Ratio: [{}{}]", onTimeStr, lateStr);
-            println("  Legend     : (=) On-Time [{} | {}%]  (x) Overdue [{} | {}%]", 
+            println("  Split Ratio: [ {}{} ]", onTimeStr, lateStr);
+            println("  Legend     : (█) On-Time [{} | {}%]  (░) Overdue [{} | {}%]", 
                     onTimeTotal, (onTimeTotal * 100) / sumReturn,
                     lateTotal, (lateTotal * 100) / sumReturn);
         } else {
@@ -436,40 +443,47 @@ namespace identity::authui {
         }
 
         if (maxMonthCount > 0) {
-            const int maxHeight = 5;
+            int maxHeight = 8;
             for (int h = maxHeight; h >= 1; --h) {
-                print("    ");
+                int threshold = (maxMonthCount * h) / maxHeight;
+                std::print("  {:3d} | ", threshold);
                 for (const auto& m : stats.monthly_trends) {
-                    int scaledHeight = (m.count * maxHeight) / maxMonthCount;
-                    if (scaledHeight >= h) {
-                        print("   ###   ");
+                    if (m.count >= threshold && m.count > 0) {
+                        std::print("   ███   ");
                     } else {
-                        print("         ");
+                        std::print("         ");
                     }
                 }
-                println("");
+                std::print("\n");
             }
             
-            // X-Axis
-            print("    ");
+            // X-Axis base line (perfectly aligned directly above month names with no vertical white spaces)
+            std::print("      +");
             for (size_t i = 0; i < stats.monthly_trends.size(); ++i) {
-                print("=========");
+                std::print("---------");
             }
-            println("");
+            std::print("\n       ");
 
-            // Prints count under the bars
-            print("    ");
+            // Month Labels (centered and formatted to 6 characters: Month Yr)
             for (const auto& m : stats.monthly_trends) {
-                print("   ({:02d})  ", m.count);
+                std::string displayMonth = m.month_name;
+                if (displayMonth.length() == 8 && displayMonth[3] == ' ') {
+                    displayMonth = displayMonth.substr(0, 3) + " " + displayMonth.substr(6, 2);
+                } else if (displayMonth.length() > 6) {
+                    displayMonth = displayMonth.substr(0, 6);
+                }
+                std::print("  {:^6} ", displayMonth);
             }
-            println("");
+            std::print("\n\n");
 
-            // Month Labels
-            print("    ");
+            // Tabular details for clean precise reference
+            tool::helper::drawLine(60, '-');
+            print("{}\n", format("  {:<20} | {:<20}", "MONTH", "RENTALS COUNT"));
+            tool::helper::drawLine(60, '-');
             for (const auto& m : stats.monthly_trends) {
-                print("   {:<3}   ", m.month_name.substr(0, 3));
+                print("{}\n", format("  {:<20} | {:<18d}", m.month_name, m.count));
             }
-            println("");
+            tool::helper::drawLine(60, '=');
         } else {
             println("  No monthly active records available.");
         }
@@ -478,7 +492,7 @@ namespace identity::authui {
         tool::helper::drawLine(60, '=');
         string waitInput;
         do {
-            print("\nEnter '0' to return to gateway: ");
+            print("\nEnter '0' to return to previous menu: ");
             getline(cin, waitInput);
         } while (waitInput != "0");
     }

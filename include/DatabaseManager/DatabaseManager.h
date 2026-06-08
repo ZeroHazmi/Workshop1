@@ -30,6 +30,9 @@ public:
     std::expected<void, std::string> connect();
     std::expected<sql::ResultSet*, std::string> executeQuery(std::string_view query);
     std::expected<int, std::string> executeUpdate(std::string_view query);
+    
+    // Alphanumeric Unique ID Generator
+    static std::string generateUniqueId(std::string_view prefix);
 
 private:
     DatabaseManager() = default;

@@ -114,7 +114,7 @@ namespace identity::adminui {
         // 1. Fetch and display all registered staff in a formatted table
         auto& db = database::DatabaseManager::getInstance();
         std::string primaryQuery = 
-            "SELECT s.staff_id, s.user_id, s.staff_name, u.username, s.position, s.phone_no, s.shop_id, "
+            "SELECT s.staff_id, s.unique_id, s.user_id, s.staff_name, u.username, s.position, s.phone_no, s.shop_id, "
             "       COALESCE(sh.shop_name, CONCAT('Shop #', s.shop_id)) AS shop_name "
             "FROM STAFF s "
             "JOIN USERS u ON s.user_id = u.user_id "
@@ -126,7 +126,7 @@ namespace identity::adminui {
         if (!result) {
             // Graceful fallback query if shops left join fails
             std::string fallbackQuery = 
-                "SELECT s.staff_id, s.user_id, s.staff_name, u.username, s.position, s.phone_no, s.shop_id, "
+                "SELECT s.staff_id, s.unique_id, s.user_id, s.staff_name, u.username, s.position, s.phone_no, s.shop_id, "
                 "       CONCAT('Shop #', s.shop_id) AS shop_name "
                 "FROM STAFF s "
                 "JOIN USERS u ON s.user_id = u.user_id "
@@ -139,7 +139,7 @@ namespace identity::adminui {
             cout << "  [Error] Failed to fetch staff list: " << result.error() << "\n";
         } else {
             sql::ResultSet* rs = result.value();
-            vector<int> colWidths = {6, 18, 14, 14, 12, 14};
+            vector<int> colWidths = {12, 16, 12, 12, 12, 14};
             
             tool::ui::printRow(colWidths, {"ID", "STAFF NAME", "USERNAME", "POSITION", "PHONE NO", "SHOP ASSIGNED"});
             tool::helper::drawLine(78, '-');
@@ -147,7 +147,7 @@ namespace identity::adminui {
             bool hasStaff = false;
             while (rs->next()) {
                 hasStaff = true;
-                string idStr = to_string(rs->getInt("staff_id"));
+                string idStr = rs->getString("unique_id");
                 string nameStr = rs->getString("staff_name");
                 string userStr = rs->getString("username");
                 string posStr = rs->getString("position");
@@ -165,28 +165,26 @@ namespace identity::adminui {
             println("");
         }
 
-        int staffId;
         print("  Enter Staff ID to manage (or 0 to cancel): ");
-        if (!(cin >> staffId) || staffId == 0) {
-            cin.clear();
-            cin.ignore(1000, '\n');
+        string staffIdInput;
+        getline(cin, staffIdInput);
+        if (staffIdInput.empty() || staffIdInput == "0") {
             return;
         }
-        cin.ignore(1000, '\n');
 
         // 2. Fetch specific staff info to verify existence and print details
-        std::string checkQuery = "SELECT s.staff_id, s.user_id, s.staff_name, s.position, s.phone_no, s.shop_id, "
+        std::string checkQuery = "SELECT s.staff_id, s.unique_id, s.user_id, s.staff_name, s.position, s.phone_no, s.shop_id, "
                                  "       COALESCE(sh.shop_name, CONCAT('Shop #', s.shop_id)) AS shop_name "
                                  "FROM STAFF s "
                                  "LEFT JOIN shops sh ON s.shop_id = sh.shop_id "
-                                 "WHERE s.staff_id = " + to_string(staffId) + " AND s.is_deleted = 0;";
+                                 "WHERE (s.unique_id = '" + staffIdInput + "' OR s.staff_id = '" + staffIdInput + "') AND s.is_deleted = 0;";
 
         auto checkRes = db.executeQuery(checkQuery);
         if (!checkRes) {
-            checkQuery = "SELECT staff_id, user_id, staff_name, position, phone_no, shop_id, "
+            checkQuery = "SELECT staff_id, unique_id, user_id, staff_name, position, phone_no, shop_id, "
                          "       CONCAT('Shop #', shop_id) AS shop_name "
                          "FROM STAFF "
-                         "WHERE staff_id = " + to_string(staffId) + " AND is_deleted = 0;";
+                         "WHERE (unique_id = '" + staffIdInput + "' OR staff_id = '" + staffIdInput + "') AND is_deleted = 0;";
             checkRes = db.executeQuery(checkQuery);
         }
 
@@ -203,6 +201,8 @@ namespace identity::adminui {
             return;
         }
 
+        int staffId = crs->getInt("staff_id");
+        string staffUniqueId = crs->getString("unique_id");
         string staffName = crs->getString("staff_name");
         string position = crs->getString("position");
         string phone = crs->getString("phone_no");
@@ -211,7 +211,7 @@ namespace identity::adminui {
         int userId = crs->getInt("user_id");
         delete crs;
 
-        println("\n  Managing Staff: {} (ID: {})", staffName, staffId);
+        println("\n  Managing Staff: {} (ID: {})", staffName, staffUniqueId);
         println("  Current Position: {}", position);
         println("  Assigned Branch : {}", shopName);
         tool::helper::drawLine(74, '-');
@@ -261,17 +261,32 @@ namespace identity::adminui {
             }
             case 2: {
                 println("\n  --- CHANGE SHOP ASSIGNMENT ---");
-                int newShopId;
                 print("  Enter New Shop ID to assign: ");
-                if (!(cin >> newShopId)) {
-                    cin.clear();
-                    cin.ignore(1000, '\n');
+                string newShopIdInput;
+                getline(cin, newShopIdInput);
+                if (newShopIdInput.empty()) {
                     println("  Invalid input. Operation cancelled.");
                     break;
                 }
-                cin.ignore(1000, '\n');
 
-                std::string updateQuery = "UPDATE STAFF SET shop_id = " + to_string(newShopId) + 
+                // Resolve shop's unique ID to internal integer shop_id
+                std::string shopQuery = "SELECT shop_id FROM shops WHERE unique_id = '" + newShopIdInput + "' OR shop_id = '" + newShopIdInput + "';";
+                auto shopRes = db.executeQuery(shopQuery);
+                int resolvedShopId = 0;
+                if (shopRes) {
+                    sql::ResultSet* srs = shopRes.value();
+                    if (srs->next()) {
+                        resolvedShopId = srs->getInt("shop_id");
+                    }
+                    delete srs;
+                }
+
+                if (resolvedShopId == 0) {
+                    println("  [Error] Shop ID not found. Assignment failed.");
+                    break;
+                }
+
+                std::string updateQuery = "UPDATE STAFF SET shop_id = " + to_string(resolvedShopId) + 
                                           " WHERE staff_id = " + to_string(staffId) + ";";
 
                 auto updateRes = db.executeUpdate(updateQuery);
@@ -367,9 +382,10 @@ namespace identity::adminui {
             return;
         }
 
+        string uniqueId = database::DatabaseManager::generateUniqueId("SHP");
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = "INSERT INTO shops (shop_name, location, shop_phone) VALUES ('" + 
-                            shopName + "', '" + location + "', '" + phone + "');";
+        std::string query = "INSERT INTO shops (shop_name, location, shop_phone, unique_id) VALUES ('" + 
+                            shopName + "', '" + location + "', '" + phone + "', '" + uniqueId + "');";
         
         auto res = db.executeUpdate(query);
         if (res) {
@@ -393,12 +409,12 @@ namespace identity::adminui {
         tool::helper::drawLine(68, '=');
         println("");
 
-        vector<int> colWidths = {6, 25, 20, 15};
+        vector<int> colWidths = {12, 22, 19, 15};
         tool::ui::printRow(colWidths, {"ID", "SHOP NAME", "LOCATION", "CONTACT PHONE"});
         tool::helper::drawLine(68, '-');
 
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = "SELECT shop_id, shop_name, location, shop_phone FROM shops ORDER BY shop_id ASC;";
+        std::string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops ORDER BY shop_id ASC;";
         auto result = db.executeQuery(query);
 
         if (!result) {
@@ -408,7 +424,7 @@ namespace identity::adminui {
             bool hasShops = false;
             while (rs->next()) {
                 hasShops = true;
-                string idStr = to_string(rs->getInt("shop_id"));
+                string idStr = rs->getString("unique_id");
                 string nameStr = rs->getString("shop_name");
                 string locStr = rs->getString("location");
                 string phoneStr = rs->getString("shop_phone");
@@ -429,17 +445,15 @@ namespace identity::adminui {
             displayShopList();
             println("");
 
-            int shopId;
             print("  Enter Shop ID to manage (or 0 to cancel/back): ");
-            if (!(cin >> shopId) || shopId == 0) {
-                cin.clear();
-                cin.ignore(1000, '\n');
+            string shopIdInput;
+            getline(cin, shopIdInput);
+            if (shopIdInput.empty() || shopIdInput == "0") {
                 return;
             }
-            cin.ignore(1000, '\n');
 
             auto& db = database::DatabaseManager::getInstance();
-            std::string query = "SELECT shop_id, shop_name, location, shop_phone FROM shops WHERE shop_id = " + to_string(shopId) + ";";
+            std::string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
             auto checkRes = db.executeQuery(query);
             if (!checkRes) {
                 cout << "  [Error] Database error: " << checkRes.error() << "\n";
@@ -455,12 +469,14 @@ namespace identity::adminui {
                 continue;
             }
 
+            int shopId = crs->getInt("shop_id");
+            string shopUniqueId = crs->getString("unique_id");
             string shopName = crs->getString("shop_name");
             string location = crs->getString("location");
             string phone = crs->getString("shop_phone");
             delete crs;
 
-            println("\n  Managing Shop: {} (ID: {})", shopName, shopId);
+            println("\n  Managing Shop: {} (ID: {})", shopName, shopUniqueId);
             println("  Location: {}", location);
             println("  Contact : {}", phone);
             tool::helper::drawLine(68, '-');
@@ -541,18 +557,16 @@ namespace identity::adminui {
         displayShopList();
         println("");
 
-        int shopId;
         print("  Enter Shop ID to view inventory (or 0 to cancel): ");
-        if (!(cin >> shopId) || shopId == 0) {
-            cin.clear();
-            cin.ignore(1000, '\n');
+        string shopIdInput;
+        getline(cin, shopIdInput);
+        if (shopIdInput.empty() || shopIdInput == "0") {
             return;
         }
-        cin.ignore(1000, '\n');
 
         // Verify shop existence first
         auto& db = database::DatabaseManager::getInstance();
-        std::string checkQuery = "SELECT shop_name FROM shops WHERE shop_id = " + to_string(shopId) + ";";
+        std::string checkQuery = "SELECT shop_id, unique_id, shop_name FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
         auto checkRes = db.executeQuery(checkQuery);
         if (!checkRes) {
             cout << "  [Error] Database error: " << checkRes.error() << "\n";
@@ -565,21 +579,23 @@ namespace identity::adminui {
             this_thread::sleep_for(chrono::milliseconds(1500));
             return;
         }
+        int shopId = crs->getInt("shop_id");
+        string shopUniqueId = crs->getString("unique_id");
         string shopName = crs->getString("shop_name");
         delete crs;
 
-        println("\n  Inventory for: {} (ID: {})\n", shopName, shopId);
+        println("\n  Inventory for: {} (ID: {})\n", shopName, shopUniqueId);
 
-        vector<int> colWidths = {6, 25, 12, 12};
+        vector<int> colWidths = {12, 29, 12, 12};
         tool::ui::printRow(colWidths, {"CAT ID", "ITEM NAME", "QUANTITY", "CONDITION"});
         tool::helper::drawLine(65, '-');
 
         std::string query = 
-            "SELECT c.catalog_id, c.name, COUNT(i.item_id) AS quantity, i.condition_status "
+            "SELECT c.catalog_id, c.unique_id, c.name, COUNT(i.item_id) AS quantity, i.condition_status "
             "FROM apparel_catalog c "
             "JOIN apparel_item i ON c.catalog_id = i.catalog_id "
             "WHERE c.shop_id = " + to_string(shopId) + " AND i.is_deleted = 0 AND c.is_deleted = 0 "
-            "GROUP BY c.catalog_id, c.name, i.condition_status "
+            "GROUP BY c.catalog_id, c.unique_id, c.name, i.condition_status "
             "ORDER BY c.catalog_id ASC;";
 
         auto result = db.executeQuery(query);
@@ -590,7 +606,7 @@ namespace identity::adminui {
             bool hasItems = false;
             while (rs->next()) {
                 hasItems = true;
-                string catIdStr = to_string(rs->getInt("catalog_id"));
+                string catIdStr = rs->getString("unique_id");
                 string nameStr = rs->getString("name");
                 string qtyStr = to_string(rs->getInt("quantity"));
                 string condStr = rs->getString("condition_status");
@@ -803,7 +819,7 @@ namespace identity::adminui {
 
     void updateActiveFilters(std::vector<int>& activeShopIds, std::vector<string>& activeShopNames) {
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = "SELECT shop_id, shop_name FROM shops ORDER BY shop_id ASC;";
+        std::string query = "SELECT shop_id, unique_id, shop_name FROM shops ORDER BY shop_id ASC;";
         auto result = db.executeQuery(query);
         println("");
         if (result) {
@@ -812,19 +828,19 @@ namespace identity::adminui {
             bool first = true;
             while (rs->next()) {
                 if (!first) print(" | ");
-                print("{}: {}", rs->getInt("shop_id"), string(rs->getString("shop_name")));
+                print("{}: {}", string(rs->getString("unique_id")), string(rs->getString("shop_name")));
                 first = false;
             }
             println("");
             delete rs;
         }
         
-        print("  Enter Shop ID(s) to filter by, separated by commas (e.g. 1, 3 or 0 for All): ");
+        print("  Enter Shop ID(s) to filter by, separated by commas (e.g. SHP-9, SHP-A8X92E or 0 for All): ");
         string input;
         getline(cin, input);
         
         // Parse input
-        std::vector<int> newIds;
+        std::vector<string> newUniqueIds;
         std::stringstream ss(input);
         std::string token;
         bool hasZero = false;
@@ -833,19 +849,14 @@ namespace identity::adminui {
             token.erase(0, token.find_first_not_of(" \t\r\n"));
             token.erase(token.find_last_not_of(" \t\r\n") + 1);
             if (token.empty()) continue;
-            try {
-                int id = std::stoi(token);
-                if (id == 0) {
-                    hasZero = true;
-                } else {
-                    newIds.push_back(id);
-                }
-            } catch (...) {
-                // Ignore invalid input tokens
+            if (token == "0") {
+                hasZero = true;
+            } else {
+                newUniqueIds.push_back(token);
             }
         }
         
-        if (hasZero || newIds.empty()) {
+        if (hasZero || newUniqueIds.empty()) {
             activeShopIds.clear();
             activeShopNames.clear();
             println("\n  Filters cleared. Showing all shops.");
@@ -853,13 +864,13 @@ namespace identity::adminui {
             // Validate and fetch shop names
             std::vector<int> validatedIds;
             std::vector<string> validatedNames;
-            for (int id : newIds) {
-                std::string checkQuery = "SELECT shop_name FROM shops WHERE shop_id = " + to_string(id) + ";";
+            for (const string& uid : newUniqueIds) {
+                std::string checkQuery = "SELECT shop_id, shop_name FROM shops WHERE unique_id = '" + uid + "' OR shop_id = '" + uid + "';";
                 auto checkRes = db.executeQuery(checkQuery);
                 if (checkRes) {
                     sql::ResultSet* crs = checkRes.value();
                     if (crs->next()) {
-                        validatedIds.push_back(id);
+                        validatedIds.push_back(crs->getInt("shop_id"));
                         validatedNames.push_back(crs->getString("shop_name"));
                     }
                     delete crs;

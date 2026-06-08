@@ -8,10 +8,12 @@ namespace inventory::apparel {
     std::expected<void, std::string> addApparelCatalog(const ApparelCatalog& catalog, const std::vector<ItemBatch>& batches) {
         auto& db = database::DatabaseManager::getInstance();
         
+        std::string catalogUniqueId = database::DatabaseManager::generateUniqueId("CAT");
+
         std::string catalog_query = std::format(
-            "INSERT INTO apparel_catalog (shop_id, name, description, category, colour, daily_rate) "
-            "VALUES ({}, '{}', '{}', '{}', '{}', {})",
-            catalog.shop_id, catalog.name, catalog.description, catalog.category, catalog.colour, catalog.daily_rate
+            "INSERT INTO apparel_catalog (shop_id, name, description, category, colour, daily_rate, unique_id) "
+            "VALUES ({}, '{}', '{}', '{}', '{}', {}, '{}')",
+            catalog.shop_id, catalog.name, catalog.description, catalog.category, catalog.colour, catalog.daily_rate, catalogUniqueId
         );
 
         auto catalog_result = db.executeUpdate(catalog_query);
@@ -31,10 +33,11 @@ namespace inventory::apparel {
 
         for (const auto& batch : batches) {
             for (int i = 0; i < batch.quantity; ++i) {
+                std::string itemUniqueId = database::DatabaseManager::generateUniqueId("ITM");
                 std::string item_query = std::format(
-                    "INSERT INTO apparel_item (catalog_id, size, status, condition_status) "
-                    "VALUES ({}, '{}', 'Available', '{}')",
-                    catalog_id, batch.size, batch.condition
+                    "INSERT INTO apparel_item (catalog_id, size, status, condition_status, unique_id) "
+                    "VALUES ({}, '{}', 'Available', '{}', '{}')",
+                    catalog_id, batch.size, batch.condition, itemUniqueId
                 );
                 auto item_res = db.executeUpdate(item_query);
                 if (!item_res) {
@@ -70,7 +73,7 @@ namespace inventory::apparel {
         auto& db = database::DatabaseManager::getInstance();
         
         std::string query = 
-            "SELECT c.catalog_id, c.shop_id, c.name, c.category, c.daily_rate, "
+            "SELECT c.catalog_id, c.unique_id, c.shop_id, c.name, c.category, c.daily_rate, "
             "(SELECT COUNT(*) FROM apparel_item i WHERE i.catalog_id = c.catalog_id AND i.status = 'Available' AND i.is_deleted = 0) AS available_stock "
             "FROM apparel_catalog c WHERE c.is_deleted = 0";
             
@@ -88,6 +91,7 @@ namespace inventory::apparel {
         while (res->next()) {
             CatalogDisplayItem item;
             item.catalog_id = res->getInt("catalog_id");
+            item.unique_id = res->getString("unique_id");
             item.shop_id = res->getInt("shop_id");
             item.name = res->getString("name");
             item.category = res->getString("category");
@@ -102,7 +106,7 @@ namespace inventory::apparel {
     std::expected<ApparelCatalog, std::string> getApparelById(int catalog_id) {
         auto& db = database::DatabaseManager::getInstance();
         std::string query = std::format(
-            "SELECT catalog_id, shop_id, name, description, category, colour, daily_rate "
+            "SELECT catalog_id, unique_id, shop_id, name, description, category, colour, daily_rate "
             "FROM apparel_catalog WHERE catalog_id = {} AND is_deleted = 0", catalog_id
         );
 
@@ -113,6 +117,36 @@ namespace inventory::apparel {
         if (res->next()) {
             ApparelCatalog catalog;
             catalog.catalog_id = res->getInt("catalog_id");
+            catalog.unique_id = res->getString("unique_id");
+            catalog.shop_id = res->getInt("shop_id");
+            catalog.name = res->getString("name");
+            catalog.description = res->getString("description");
+            catalog.category = res->getString("category");
+            catalog.colour = res->getString("colour");
+            catalog.daily_rate = res->getDouble("daily_rate");
+            delete res;
+            return catalog;
+        }
+        delete res;
+        return std::unexpected("Catalog item not found.");
+    }
+
+    std::expected<ApparelCatalog, std::string> getApparelByUniqueId(std::string_view unique_id) {
+        auto& db = database::DatabaseManager::getInstance();
+        std::string query = std::format(
+            "SELECT catalog_id, unique_id, shop_id, name, description, category, colour, daily_rate "
+            "FROM apparel_catalog WHERE (unique_id = '{}' OR catalog_id = '{}') AND is_deleted = 0",
+            std::string(unique_id), std::string(unique_id)
+        );
+
+        auto result = db.executeQuery(query);
+        if (!result) return std::unexpected(result.error());
+
+        sql::ResultSet* res = result.value();
+        if (res->next()) {
+            ApparelCatalog catalog;
+            catalog.catalog_id = res->getInt("catalog_id");
+            catalog.unique_id = res->getString("unique_id");
             catalog.shop_id = res->getInt("shop_id");
             catalog.name = res->getString("name");
             catalog.description = res->getString("description");
@@ -149,7 +183,7 @@ namespace inventory::apparel {
     std::expected<std::vector<ApparelItem>, std::string> getItemsByStatus(std::string_view status) {
         auto& db = database::DatabaseManager::getInstance();
         std::string query = std::format(
-            "SELECT item_id, catalog_id, size, status, condition_status FROM apparel_item "
+            "SELECT item_id, unique_id, catalog_id, size, status, condition_status FROM apparel_item "
             "WHERE status = '{}' AND is_deleted = 0",
             status
         );
@@ -158,17 +192,18 @@ namespace inventory::apparel {
         if (!result) return std::unexpected(result.error());
 
         std::vector<ApparelItem> items;
-        sql::ResultSet* res = result.value();
-        while (res->next()) {
+        sql::ResultSet* rs = result.value();
+        while (rs->next()) {
             ApparelItem item;
-            item.item_id = res->getInt("item_id");
-            item.catalog_id = res->getInt("catalog_id");
-            item.size = res->getString("size");
-            item.status = res->getString("status");
-            item.condition_status = res->getString("condition_status");
+            item.item_id = rs->getInt("item_id");
+            item.unique_id = rs->getString("unique_id");
+            item.catalog_id = rs->getInt("catalog_id");
+            item.size = rs->getString("size");
+            item.status = rs->getString("status");
+            item.condition_status = rs->getString("condition_status");
             items.push_back(item);
         }
-        delete res;
+        delete rs;
         return items;
     }
 

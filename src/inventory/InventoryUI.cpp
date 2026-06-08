@@ -24,7 +24,7 @@ namespace inventory::ui {
         while (renting) {
             tool::helper::clearScreen();
             tool::ui::displayTitle("RENT ITEM", 65);
-            println("  Item: {} (ID: {})", item.name, item.catalog_id);
+            println("  Item: {} (ID: {})", item.name, item.unique_id);
             println("");
 
             string selected_size, start, end, confirm;
@@ -130,16 +130,8 @@ namespace inventory::ui {
 
     void showItemDetails(const ::identity::auth::UserSession& session, const string &itemIdStr) {
       bool isCustomer = (find(session.roles.begin(), session.roles.end(), "customer") != session.roles.end());
-      int catalog_id = 0;
-      try {
-          catalog_id = stoi(itemIdStr);
-      } catch (...) {
-          println("  Invalid Item ID format.");
-          this_thread::sleep_for(chrono::milliseconds(1000));
-          return;
-      }
 
-      auto itemOpt = inventory::apparel::getApparelById(catalog_id);
+      auto itemOpt = inventory::apparel::getApparelByUniqueId(itemIdStr);
       if (!itemOpt) {
           println("  {}", itemOpt.error());
           this_thread::sleep_for(chrono::milliseconds(1000));
@@ -147,6 +139,7 @@ namespace inventory::ui {
       }
 
       auto item = itemOpt.value();
+      int catalog_id = item.catalog_id;
 
       bool viewingItem = true;
       while (viewingItem) {
@@ -154,7 +147,7 @@ namespace inventory::ui {
         tool::ui::displayTitle("ITEM DETAILS", 65);
 
         println("");
-        println("  Catalog ID  : {}", item.catalog_id);
+        println("  Catalog ID  : {}", item.unique_id);
         println("  Name        : {}", item.name);
         println("  Category    : {}", item.category);
         println("  Rate        : RM {:.2f} / day", item.daily_rate);
@@ -226,7 +219,7 @@ namespace inventory::ui {
         }
         println("");
 
-        vector<int> colWidths = {4, 25, 12, 12, 10};
+        vector<int> colWidths = {12, 29, 12, 12, 10};
 
         // Header Row
         tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "CATEGORY", "PRICE/DAY", "AVAILABLE"});
@@ -238,7 +231,7 @@ namespace inventory::ui {
         if (result) {
             for (const auto& item : result.value()) {
                 tool::ui::printRow(colWidths, {
-                    to_string(item.catalog_id),
+                    item.unique_id,
                     item.name,
                     item.category,
                     format("RM {:.2f}", item.daily_rate),

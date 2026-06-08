@@ -16,13 +16,16 @@ namespace identity::customer {
             return unexpected("Full name is required for customer profile.");
         }
 
+        string uniqueId = database::DatabaseManager::generateUniqueId("CST");
+
         // Insert corresponding CUSTOMER record
         string customerQuery =
-            "INSERT INTO CUSTOMERS (user_id, fullname, email, phone_no) VALUES (" +
+            "INSERT INTO CUSTOMERS (user_id, fullname, email, phone_no, unique_id) VALUES (" +
             to_string(userId) + ", '" +
             string(fullname) + "', '" +
             string(email) + "', '" +
-            string(phone) + "');";
+            string(phone) + "', '" +
+            uniqueId + "');";
 
         auto customerResult = database::DatabaseManager::getInstance().executeUpdate(customerQuery);
 
