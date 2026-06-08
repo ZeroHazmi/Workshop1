@@ -17,6 +17,7 @@
 #include "identity/StaffUI.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "tool/input.h"
 
 using namespace std;
 
@@ -48,15 +49,9 @@ int main() {
 
         int choice;
         // Basic input validation for CLI navigation
-        if (!(cin >> choice)) {
-            cin.clear();
-            cin.ignore(1000, '\n');
+        if (!tool::input::readInt(choice)) {
             println("Invalid input. Please enter a number.");
-            invalidAttempts++;
-            if (invalidAttempts >= 3) {
-                println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                this_thread::sleep_for(chrono::seconds(5));
-                invalidAttempts = 0;
+            if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                 tool::helper::clearScreen();
                 ::identity::authui::showSplashScreen();
             }
@@ -101,11 +96,7 @@ int main() {
                 break;
             default:
                 println("Invalid selection. Please try again.");
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
+                if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     tool::helper::clearScreen();
                     ::identity::authui::showSplashScreen();
                 }

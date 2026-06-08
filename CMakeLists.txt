@@ -17,7 +17,6 @@ link_directories("${MYSQL_CON_DIR}/lib64/vs14")
 # Source files
 set(SOURCES
 	src/main.cpp
-	src/identity/Users/Users.cpp
 	src/identity/Profile/Profile.cpp
 	src/identity/Auth/Auth.cpp
 	src/identity/Customer/Customer.cpp
@@ -25,17 +24,15 @@ set(SOURCES
 	src/identity/AuthUI.cpp
 	src/identity/AdminUI.cpp
 	src/identity/StaffUI.cpp
-	src/inventory/Shops/Shops.cpp
 	src/inventory/Apparel/Apparel.cpp
 	src/inventory/InventoryUI.cpp
-	src/transaction/Rental_Details/Rental_Details.cpp
 	src/transaction/Rental/Rental.cpp
 	src/transaction/Rental/AdminStats.cpp
-	src/transaction/RentalUI.cpp
 	src/DatabaseManager/DatabaseManager.cpp
 	src/tool/helper.cpp
 	src/tool/DateHelper.cpp
 	src/tool/CLIComponents.cpp
+	src/tool/input.cpp
 )
 
 include(CTest)

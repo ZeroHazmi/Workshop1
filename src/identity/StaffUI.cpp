@@ -1,6 +1,7 @@
 #include "identity/StaffUI.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "tool/input.h"
 #include "inventory/Apparel/Apparel.h"
 #include "identity/Profile/Profile.h"
 #include "inventory/InventoryUI.h"
@@ -47,18 +48,11 @@ namespace identity::staffui {
             showStaffDashboard(session);
             
             int choice;
-            if (!(cin >> choice)) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                }
+            if (!tool::input::readInt(choice)) {
+                println("Invalid input. Please enter a number.");
+                tool::ui::handleInvalidAttempt(invalidAttempts);
                 continue;
             }
-            cin.ignore(1000, '\n');  // Clear input buffer
 
             switch (choice) {
                 case 1:
@@ -87,11 +81,8 @@ namespace identity::staffui {
                     break;
                 default:
                     println("Invalid option.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
-                        invalidAttempts = 0;
+                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
                     }
             }
         }
@@ -153,10 +144,7 @@ namespace identity::staffui {
     }
 
     static void updateConditionFlow() {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("UPDATE APPAREL CONDITION", 64);
-        tool::helper::drawLine(64, '=');
+        tool::ui::showHeader("UPDATE APPAREL CONDITION", 64);
         println("");
 
         int itemId = -1;
@@ -237,18 +225,11 @@ namespace identity::staffui {
             }
         }
 
-        string waitInput;
-        do {
-            print("\nEnter '0' to return: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("previous menu", 64);
     }
 
     static void retireApparelFlow() {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("RETIRE / REMOVE DAMAGED APPAREL", 64);
-        tool::helper::drawLine(64, '=');
+        tool::ui::showHeader("RETIRE / REMOVE DAMAGED APPAREL", 64);
         println("");
 
         int itemId = -1;
@@ -306,11 +287,7 @@ namespace identity::staffui {
         if (!rs->next()) {
             delete rs;
             std::print("  [Error] Item ID #{} not found or already retired.\n", itemUniqueId);
-            string waitInput;
-            do {
-                print("\nEnter '0' to return: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("previous menu", 64);
             return;
         }
 
@@ -347,39 +324,24 @@ namespace identity::staffui {
             std::print("\n  Retirement cancelled.\n");
         }
 
-        string waitInput;
-        do {
-            print("\nEnter '0' to return: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("previous menu", 64);
     }
 
     static void processLaundryFlow() {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("PROCESS LAUNDRY", 64);
-        tool::helper::drawLine(64, '=');
+        tool::ui::showHeader("PROCESS LAUNDRY", 64);
         println("");
 
         auto result = inventory::apparel::getItemsByStatus("Laundry");
         if (!result) {
             println("  Error fetching laundry items: {}", result.error());
-            string waitInput;
-            do {
-                print("\nEnter '0' to return: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("previous menu", 64);
             return;
         }
 
         auto items = result.value();
         if (items.empty()) {
             println("  No items currently in laundry.");
-            string waitInput;
-            do {
-                print("\nEnter '0' to return: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("previous menu", 64);
             return;
         }
 
@@ -413,11 +375,7 @@ namespace identity::staffui {
 
         if (itemId == -1) {
             println("  [Error] Item ID not found.");
-            string waitInput;
-            do {
-                print("\nEnter '0' to return: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("previous menu", 64);
             return;
         }
 
@@ -428,22 +386,14 @@ namespace identity::staffui {
             println("\n  Error: {}", updateRes.error());
         }
 
-        string waitInput;
-        do {
-            print("\nEnter '0' to return: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("previous menu", 64);
     }
 
     void manageApparelInventory(const ::identity::auth::UserSession& session) {
         bool inInventoryMenu = true;
         int invalidAttempts = 0;
         while (inInventoryMenu) {
-            tool::helper::clearScreen();
-            tool::helper::drawLine(64, '=');
-            tool::ui::displayTitle("INVENTORY MANAGEMENT", 64);
-            tool::helper::drawLine(64, '=');
-            println("");
+            tool::ui::showHeader("INVENTORY MANAGEMENT", 64);
             
             println("  [1] Register/Add New Apparel");
             println("  [2] View All Apparel (Full Catalog)");
@@ -456,54 +406,43 @@ namespace identity::staffui {
             print("  Select an option: ");
             
             int choice;
-            if (!(cin >> choice)) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                }
-                continue;
-            }
-            cin.ignore(1000, '\n');
-            
-            switch(choice) {
-                case 1:
-                    invalidAttempts = 0;
-                    inventory::ui::registerNewApparel(session);
-                    break;
-                case 2:
-                    invalidAttempts = 0;
-                    inventory::ui::showCatalog(session);
-                    break;
-                case 3:
-                    invalidAttempts = 0;
-                    updateConditionFlow();
-                    break;
-                case 4:
-                    invalidAttempts = 0;
-                    processLaundryFlow();
-                    break;
-                case 5:
-                    invalidAttempts = 0;
-                    retireApparelFlow();
-                    break;
-                case 0:
-                    invalidAttempts = 0;
-                    inInventoryMenu = false;
-                    break;
-                default:
-                    println("Invalid option.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
+            if (tool::input::readInt(choice)) {
+                switch(choice) {
+                    case 1:
                         invalidAttempts = 0;
-                    } else {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                        inventory::ui::registerNewApparel(session);
+                        break;
+                    case 2:
+                        invalidAttempts = 0;
+                        inventory::ui::showCatalog(session);
+                        break;
+                    case 3:
+                        invalidAttempts = 0;
+                        updateConditionFlow();
+                        break;
+                    case 4:
+                        invalidAttempts = 0;
+                        processLaundryFlow();
+                        break;
+                    case 5:
+                        invalidAttempts = 0;
+                        retireApparelFlow();
+                        break;
+                    case 0:
+                        invalidAttempts = 0;
+                        inInventoryMenu = false;
+                        break;
+                    default:
+                        println("Invalid option.");
+                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                            this_thread::sleep_for(chrono::milliseconds(1000));
+                        }
+                }
+            } else {
+                println("Invalid input. Please enter a number.");
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
             }
         }
     }
@@ -516,10 +455,7 @@ namespace identity::staffui {
         int invalidAttempts = 0;
 
         while (inRentalsMenu) {
-            tool::helper::clearScreen();
-            tool::helper::drawLine(85, '=');
-            tool::ui::displayTitle("ACTIVE & OVERDUE RENTALS MANAGEMENT", 85);
-            tool::helper::drawLine(85, '=');
+            tool::ui::showHeader("ACTIVE & OVERDUE RENTALS MANAGEMENT", 85);
             if (!searchTerm.empty()) {
                 println("  [Search Filter: '{}']", searchTerm);
             }
@@ -648,40 +584,23 @@ namespace identity::staffui {
                     } else {
                         println("  [Error] Failed to process return: {}", returnRes.error());
                     }
-                    string waitInput;
-                    do {
-                        print("\nEnter '0' to return: ");
-                        getline(cin, waitInput);
-                    } while (waitInput != "0");
+                    tool::ui::pressZeroToReturn("previous menu", 85);
                 } else {
                     println("  Invalid choice.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
-                        invalidAttempts = 0;
-                    } else {
+                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                         this_thread::sleep_for(chrono::milliseconds(1000));
                     }
                 }
             } else {
                 println("  Error retrieving active rentals: {}", result.error());
-                string waitInput;
-                do {
-                    print("\nEnter '0' to return to dashboard: ");
-                    getline(cin, waitInput);
-                } while (waitInput != "0");
+                tool::ui::pressZeroToReturn("dashboard", 85);
                 inRentalsMenu = false;
             }
         }
     }
 
     void viewStaffProfile(const ::identity::auth::UserSession& session) {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("STAFF PROFILE", 64);
-        tool::helper::drawLine(64, '=');
-        println("");
+        tool::ui::showHeader("STAFF PROFILE", 64);
 
         auto profileRes = ::identity::profile::Profile::getStaffProfile(session.userid);
         if (profileRes) {
@@ -716,14 +635,7 @@ namespace identity::staffui {
             tool::ui::printField("Assigned Shop", "Not Assigned");
         }
         
-        println("");
-        println("  (Note: Contact admin to modify profile information)");
-        tool::helper::drawLine(64, '-');
-        
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        println("\n  (Note: Contact admin to modify profile information)");
+        tool::ui::pressZeroToReturn("dashboard", 64);
     }
 }

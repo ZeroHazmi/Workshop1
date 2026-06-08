@@ -6,6 +6,7 @@
 #include "tool/CLIComponents.h"
 #include "tool/DateHelper.h"
 #include "tool/helper.h"
+#include "tool/input.h"
 #include <algorithm>
 #include <chrono>
 #include <format>
@@ -22,14 +23,13 @@ namespace inventory::ui {
     bool processRentalCheckout(const ::identity::auth::UserSession& session, const inventory::apparel::ApparelCatalog& item, int catalog_id) {
         bool renting = true;
         while (renting) {
-            tool::helper::clearScreen();
-            tool::ui::displayTitle("RENT ITEM", 65);
+            tool::ui::showHeader("RENT ITEM", 65);
             println("  Item: {} (ID: {})", item.name, item.unique_id);
             println("");
 
             string selected_size, start, end, confirm;
             print("  Enter Size you wish to rent: ");
-            getline(cin, selected_size);
+            tool::input::readLine(selected_size);
             
             bool sizeAvailable = false;
             auto currentSizesOpt = inventory::apparel::getAvailableSizes(catalog_id);
@@ -45,7 +45,7 @@ namespace inventory::ui {
             auto promptRetry = []() -> bool {
                 print("  Do you want to try again? (Y/N): ");
                 string tryAgain;
-                getline(cin, tryAgain);
+                tool::input::readLine(tryAgain);
                 return (tryAgain == "Y" || tryAgain == "y");
             };
 
@@ -56,7 +56,7 @@ namespace inventory::ui {
             }
 
             print("  Enter Start Date (DD/MM/YYYY): ");
-            getline(cin, start);
+            tool::input::readLine(start);
 
             if (!tool::date::isValidFormat(start)) {
                 println("\n  Error: Invalid date '{}'. Invalid date format or date does not exist.", start);
@@ -72,7 +72,7 @@ namespace inventory::ui {
             }
 
             print("  Enter Expected Return Date (DD/MM/YYYY): ");
-            getline(cin, end);
+            tool::input::readLine(end);
 
             if (!tool::date::isValidFormat(end)) {
                 println("\n  Error: Invalid date '{}'. Invalid return date format or date does not exist.", end);
@@ -105,7 +105,7 @@ namespace inventory::ui {
             println("");
 
             print("  Confirm Rental? (Y/N): ");
-            getline(cin, confirm);
+            tool::input::readLine(confirm);
 
             if (confirm == "Y" || confirm == "y") {
                 auto txResult = transaction::rental::createRental(
@@ -120,11 +120,7 @@ namespace inventory::ui {
                 println("\n  Rental cancelled.");
             }
 
-            string waitInput;
-            do {
-                print("\nEnter '0' to return to catalog: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("catalog", 65);
             return true; // Exit to catalog
         }
         return false;
@@ -146,10 +142,8 @@ namespace inventory::ui {
       bool viewingItem = true;
       int invalidAttempts = 0;
       while (viewingItem) {
-        tool::helper::clearScreen();
-        tool::ui::displayTitle("ITEM DETAILS", 65);
+        tool::ui::showHeader("ITEM DETAILS", 65);
 
-        println("");
         println("  Catalog ID  : {}", item.unique_id);
         println("  Name        : {}", item.name);
         println("  Category    : {}", item.category);
@@ -178,18 +172,10 @@ namespace inventory::ui {
         print("  Enter your choice: ");
 
         string choice;
-        if (!(cin >> choice)) {
-          cin.clear();
-          cin.ignore(1000, '\n');
-          invalidAttempts++;
-          if (invalidAttempts >= 3) {
-              println("\nToo many invalid attempts. Pausing for 5 seconds...");
-              this_thread::sleep_for(chrono::seconds(5));
-              invalidAttempts = 0;
-          }
+        if (!tool::input::readLine(choice)) {
+          tool::ui::handleInvalidAttempt(invalidAttempts);
           continue;
         }
-        cin.ignore(1000, '\n');
 
         if (choice == "1" && isCustomer) {
           invalidAttempts = 0;
@@ -202,12 +188,7 @@ namespace inventory::ui {
           viewingItem = false;
         } else {
           println("  Invalid option.");
-          invalidAttempts++;
-          if (invalidAttempts >= 3) {
-              println("\nToo many invalid attempts. Pausing for 5 seconds...");
-              this_thread::sleep_for(chrono::seconds(5));
-              invalidAttempts = 0;
-          } else {
+          if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
               this_thread::sleep_for(chrono::milliseconds(1000));
           }
         }
@@ -229,14 +210,10 @@ namespace inventory::ui {
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        tool::helper::clearScreen();
-        tool::helper::drawLine(75, '=');
-        tool::ui::displayTitle("APPAREL CATALOG", 75);
-        tool::helper::drawLine(75, '=');
+        tool::ui::showHeader("APPAREL CATALOG", 75);
         if (!searchTerm.empty()) {
             println("  [Search Filter: '{}']", searchTerm);
         }
-        println("");
 
         vector<int> colWidths = {12, 24, 19, 10, 10};
 
@@ -264,34 +241,17 @@ namespace inventory::ui {
         tool::helper::drawLine(75, '=');
 
         // Pagination
-        if (totalPages > 1) {
-          string pageInfo = format("Page {} of {} | Total: {}", currentPage, totalPages, totalItems);
-          int padding = (75 - static_cast<int>(pageInfo.length())) / 2;
-          string spaces(padding > 0 ? padding : 0, ' ');
-          println("{}{}", spaces, pageInfo);
-
-          tool::helper::drawLine(75, '-');
-          println("  [N] Next Page     [P] Previous Page    [S] Search Catalog");
-        } else {
-          println("  [S] Search Catalog");
-        }
+        tool::ui::printPaginationFooter(currentPage, totalPages, totalItems, 75);
+        println("  [S] Search Catalog");
         println("  [0] Go Back");
         println("");
         print("  Enter an Item ID to view details, or choose an option: ");
 
         string choice;
-        if (!(cin >> choice)) {
-          cin.clear();
-          cin.ignore(1000, '\n');
-          invalidAttempts++;
-          if (invalidAttempts >= 3) {
-              println("\nToo many invalid attempts. Pausing for 5 seconds...");
-              this_thread::sleep_for(chrono::seconds(5));
-              invalidAttempts = 0;
-          }
+        if (!tool::input::readLine(choice)) {
+          tool::ui::handleInvalidAttempt(invalidAttempts);
           continue;
         }
-        cin.ignore(1000, '\n');
 
         bool validChoice = false;
         if (choice == "0" || choice == "N" || choice == "n" || choice == "P" || choice == "p" || choice == "S" || choice == "s") {
@@ -315,19 +275,14 @@ namespace inventory::ui {
                 currentPage--;
             } else if (choice == "S" || choice == "s") {
               print("  Enter search query (or press Enter to clear): ");
-              getline(cin, searchTerm);
+              tool::input::readLine(searchTerm);
               currentPage = 1;
             } else {
               showItemDetails(session, choice);
             }
         } else {
             println("  Invalid option or Item ID not found.");
-            invalidAttempts++;
-            if (invalidAttempts >= 3) {
-                println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                this_thread::sleep_for(chrono::seconds(5));
-                invalidAttempts = 0;
-            } else {
+            if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                 this_thread::sleep_for(chrono::milliseconds(1000));
             }
         }
@@ -335,45 +290,45 @@ namespace inventory::ui {
     }
 
     void registerNewApparel(const ::identity::auth::UserSession& session) {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("REGISTER NEW APPAREL", 64);
-        tool::helper::drawLine(64, '=');
-        println("");
+        tool::ui::showHeader("REGISTER NEW APPAREL", 64);
 
         auto staffProfileOpt = ::identity::profile::Profile::getStaffProfile(session.userid);
         if (!staffProfileOpt) {
             println("  Error: Could not retrieve staff profile.");
-            string waitInput;
-            do {
-                print("\nEnter '0' to return to dashboard: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("dashboard", 64);
             return;
         }
         int shop_id = staffProfileOpt.value().shop_id;
 
         string apparelName, category, colour, description;
-        double rentalPrice;
+        double rentalPrice = 0.0;
 
         print("  Apparel Name (or '0' to cancel): ");
-        getline(cin, apparelName);
+        if (!tool::input::readLine(apparelName)) return;
         if (apparelName == "0" || apparelName == "cancel") return;
         
         print("  Description: ");
-        getline(cin, description);
+        if (!tool::input::readLine(description)) return;
         
         print("  Category: ");
-        getline(cin, category);
+        if (!tool::input::readLine(category)) return;
         
         print("  Colour: ");
-        getline(cin, colour);
+        if (!tool::input::readLine(colour)) return;
         
         print("  Rental Price (per day): RM ");
-        if (!(cin >> rentalPrice) || rentalPrice < 0) {
-            cin.clear(); cin.ignore(1000, '\n'); return;
+        string priceStr;
+        if (!tool::input::readLine(priceStr)) return;
+        try {
+            rentalPrice = stod(priceStr);
+            if (rentalPrice < 0) {
+                println("  Invalid price. Registration cancelled.");
+                return;
+            }
+        } catch (...) {
+            println("  Invalid price. Registration cancelled.");
+            return;
         }
-        cin.ignore(1000, '\n');
 
         std::vector<inventory::apparel::ItemBatch> batches;
         bool addingSizes = true;
@@ -381,26 +336,37 @@ namespace inventory::ui {
         while (addingSizes) {
             println("\n  --- ADD INVENTORY BATCH ---");
             string size, condition, addAnother;
-            int quantity;
+            int quantity = 0;
             
             print("  Size (e.g. S, M, L): ");
-            getline(cin, size);
+            if (!tool::input::readLine(size)) continue;
             
             print("  Quantity: ");
-            if (!(cin >> quantity) || quantity < 0) {
-                cin.clear(); cin.ignore(1000, '\n'); 
+            string qtyStr;
+            if (!tool::input::readLine(qtyStr)) {
                 println("  Invalid quantity. Batch cancelled.");
                 continue;
             }
-            cin.ignore(1000, '\n');
+            try {
+                quantity = stoi(qtyStr);
+                if (quantity < 0) {
+                    println("  Invalid quantity. Batch cancelled.");
+                    continue;
+                }
+            } catch (...) {
+                println("  Invalid quantity. Batch cancelled.");
+                continue;
+            }
             
             print("  Condition (e.g. Excellent, Good): ");
-            getline(cin, condition);
+            if (!tool::input::readLine(condition)) continue;
             
             batches.push_back({size, quantity, condition});
             
             print("  Do you want to add another size for this apparel? (Y/N): ");
-            getline(cin, addAnother);
+            if (!tool::input::readLine(addAnother)) {
+                addingSizes = false;
+            }
             
             if (addAnother != "Y" && addAnother != "y") {
                 addingSizes = false;
@@ -409,11 +375,7 @@ namespace inventory::ui {
 
         if (batches.empty()) {
             println("\n  Registration cancelled: No inventory batches added.");
-            string waitInput;
-            do {
-                print("\nEnter '0' to return to dashboard: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("dashboard", 64);
             return;
         }
 
@@ -434,11 +396,7 @@ namespace inventory::ui {
             println("\n  Error: {}", result.error());
         }
         
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 64);
     }
 
 } // namespace inventory::ui

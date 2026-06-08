@@ -6,6 +6,7 @@
 #include "inventory/InventoryUI.h"
 #include "identity/Profile/Profile.h"
 #include "transaction/Rental/Rental.h"
+#include "tool/input.h"
 #include <print>
 #include <string>
 #include <format>
@@ -72,18 +73,11 @@ namespace identity::authui {
             showCustomerDashboard(session);
             
             int subChoice;
-            if (!(cin >> subChoice)) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                }
+            if (!tool::input::readInt(subChoice)) {
+                println("Invalid input. Please enter a number.");
+                tool::ui::handleInvalidAttempt(invalidAttempts);
                 continue;
             }
-            cin.ignore(1000, '\n');  // Clear the input buffer after reading choice
 
             switch (subChoice) {
                 case 1: 
@@ -121,22 +115,13 @@ namespace identity::authui {
                     break;
                 default:
                     println("Invalid option.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
-                        invalidAttempts = 0;
-                    }
+                    tool::ui::handleInvalidAttempt(invalidAttempts);
             }
         }
     }
 
     void viewProfile(const ::identity::auth::UserSession& session) {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("USER PROFILE", 64);
-        tool::helper::drawLine(64, '=');
-        println(""); // Spacer
+        tool::ui::showHeader("USER PROFILE", 64);
 
         auto profileOpt = ::identity::profile::Profile::getCustomerProfile(session.userid);
         if (profileOpt) {
@@ -150,26 +135,15 @@ namespace identity::authui {
             println("  (Please ensure your customer profile has been fully set up.)");
         }
         
-        println("");
-        tool::helper::drawLine(64, '-');
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 64);
     }
 
     void manageBankAccount(const ::identity::auth::UserSession& session) {
         bool inBankMenu = true;
         int invalidAttempts = 0;
         while (inBankMenu) {
-            tool::helper::clearScreen();
-            tool::helper::drawLine(64, '=');
-            tool::ui::displayTitle("BANK ACCOUNT DETAILS", 64);
-            tool::helper::drawLine(64, '=');
+            tool::ui::showHeader("BANK ACCOUNT DETAILS", 64);
             
-            println(""); // Spacer
-
             auto bankOpt = ::identity::profile::Profile::getBankAccount(session.userid);
             if (bankOpt) {
                 auto& bank = bankOpt.value();
@@ -192,8 +166,7 @@ namespace identity::authui {
                 println("  [0] Back to Dashboard");
                 print("\n  Enter selection: ");
                 int option;
-                if (cin >> option) {
-                    cin.ignore(1000, '\n');
+                if (tool::input::readInt(option)) {
                     if (option == 1) {
                         invalidAttempts = 0;
                         print("  Enter deposit amount: RM ");
@@ -211,11 +184,7 @@ namespace identity::authui {
                             cin.ignore(1000, '\n');
                             println("\n  Invalid deposit amount.");
                         }
-                        string waitInput;
-                        do {
-                            print("\nEnter '0' to return to bank menu: ");
-                            getline(cin, waitInput);
-                        } while (waitInput != "0");
+                        tool::ui::pressZeroToReturn("bank menu", 64);
                     } else if (option == 2) {
                         invalidAttempts = 0;
                         auto removeRes = ::identity::profile::Profile::removeBankAccount(bank.acc_id);
@@ -224,35 +193,19 @@ namespace identity::authui {
                         } else {
                             println("\n  Failed to unlink bank account: {}", removeRes.error());
                         }
-                        string waitInput;
-                        do {
-                            print("\nEnter '0' to return to bank menu: ");
-                            getline(cin, waitInput);
-                        } while (waitInput != "0");
+                        tool::ui::pressZeroToReturn("bank menu", 64);
                     } else if (option == 0) {
                         invalidAttempts = 0;
                         inBankMenu = false;
                     } else {
                         println("  Invalid selection.");
-                        invalidAttempts++;
-                        if (invalidAttempts >= 3) {
-                            println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                            this_thread::sleep_for(chrono::seconds(5));
-                            invalidAttempts = 0;
-                        } else {
+                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                             this_thread::sleep_for(chrono::milliseconds(1000));
                         }
                     }
                 } else {
-                    cin.clear();
-                    cin.ignore(1000, '\n');
                     println("  Invalid selection.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
-                        invalidAttempts = 0;
-                    } else {
+                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                         this_thread::sleep_for(chrono::milliseconds(1000));
                     }
                 }
@@ -263,8 +216,7 @@ namespace identity::authui {
                 print("\n  Enter selection: ");
                 
                 int choice;
-                if (cin >> choice) {
-                    cin.ignore(1000, '\n');
+                if (tool::input::readInt(choice)) {
                     if (choice == 1) {
                         invalidAttempts = 0;
                         tool::helper::clearScreen();
@@ -285,35 +237,19 @@ namespace identity::authui {
                         } else {
                             println("\n  Failed to link bank account: {}", linkResult.error());
                         }
-                        string waitInput;
-                        do {
-                            print("\nEnter '0' to return to bank menu: ");
-                            getline(cin, waitInput);
-                        } while (waitInput != "0");
+                        tool::ui::pressZeroToReturn("bank menu", 64);
                     } else if (choice == 0) {
                         invalidAttempts = 0;
                         inBankMenu = false;
                     } else {
                         println("  Invalid selection.");
-                        invalidAttempts++;
-                        if (invalidAttempts >= 3) {
-                            println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                            this_thread::sleep_for(chrono::seconds(5));
-                            invalidAttempts = 0;
-                        } else {
+                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                             this_thread::sleep_for(chrono::milliseconds(1000));
                         }
                     }
                 } else {
-                    cin.clear();
-                    cin.ignore(1000, '\n');
                     println("  Invalid selection.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
-                        invalidAttempts = 0;
-                    } else {
+                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                         this_thread::sleep_for(chrono::milliseconds(1000));
                     }
                 }
@@ -322,31 +258,19 @@ namespace identity::authui {
     }
 
     void viewRentalHistory(const ::identity::auth::UserSession& session) {
-        tool::helper::clearScreen();
-        tool::ui::displayTitle("RENTAL HISTORY", 75);
-        println("");
+        tool::ui::showHeader("RENTAL HISTORY", 75);
 
         auto historyResult = ::transaction::rental::getCustomerRentalHistory(session.userid);
         if (!historyResult) {
             println("  Error: {}", historyResult.error());
-            string waitInput;
-            do {
-                print("\nEnter '0' to return to dashboard: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("dashboard", 75);
             return;
         }
 
         auto& history = historyResult.value();
         if (history.empty()) {
             println("  You have no active or past rentals in your history.");
-            println("");
-            tool::helper::drawLine(75, '-');
-            string waitInput;
-            do {
-                print("\nEnter '0' to return to dashboard: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("dashboard", 75);
             return;
         }
 
@@ -369,23 +293,14 @@ namespace identity::authui {
             });
         }
 
-        tool::helper::drawLine(75, '=');
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 75);
     }
 
     void handleRentalHistoryMenu(const ::identity::auth::UserSession& session) {
         bool inSubMenu = true;
         int invalidAttempts = 0;
         while (inSubMenu) {
-            tool::helper::clearScreen();
-            tool::helper::drawLine(50, '=');
-            tool::ui::displayTitle("RENTAL HISTORY GATEWAY", 50);
-            tool::helper::drawLine(50, '=');
-            println("");
+            tool::ui::showHeader("RENTAL HISTORY GATEWAY", 50);
             println("  [1] View Detailed Transaction Log");
             println("  [2] View Booking Behaviour & Insights (Graphs)");
             println("  [0] Back to Main Menu");
@@ -394,59 +309,42 @@ namespace identity::authui {
             print("  Select option: ");
 
             int choice;
-            if (!(cin >> choice)) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                }
-                continue;
-            }
-            cin.ignore(1000, '\n');
-
-            switch (choice) {
-                case 1:
-                    invalidAttempts = 0;
-                    viewRentalHistory(session);
-                    break;
-                case 2:
-                    invalidAttempts = 0;
-                    viewBookingBehaviour(session);
-                    break;
-                case 0:
-                    invalidAttempts = 0;
-                    inSubMenu = false;
-                    break;
-                default:
-                    println("  Invalid selection.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
+            if (tool::input::readInt(choice)) {
+                switch (choice) {
+                    case 1:
                         invalidAttempts = 0;
-                    } else {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                        viewRentalHistory(session);
+                        break;
+                    case 2:
+                        invalidAttempts = 0;
+                        viewBookingBehaviour(session);
+                        break;
+                    case 0:
+                        invalidAttempts = 0;
+                        inSubMenu = false;
+                        break;
+                    default:
+                        println("  Invalid selection.");
+                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                            this_thread::sleep_for(chrono::milliseconds(1000));
+                        }
+                }
+            } else {
+                println("  Invalid selection.");
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
             }
         }
     }
 
     void viewBookingBehaviour(const ::identity::auth::UserSession& session) {
-        tool::helper::clearScreen();
-        tool::ui::displayTitle("BOOKING BEHAVIOUR & INSIGHTS", 60);
-        println("");
+        tool::ui::showHeader("BOOKING BEHAVIOUR & INSIGHTS", 60);
 
         auto statsRes = ::transaction::rental::getCustomerBookingStats(session.userid);
         if (!statsRes) {
             println("  Error retrieving statistics: {}", statsRes.error());
-            string waitInput;
-            do {
-                print("\nEnter '0' to return to previous menu: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("previous menu", 60);
             return;
         }
 
@@ -460,13 +358,7 @@ namespace identity::authui {
 
         if (totalRentals == 0) {
             println("  No rental history found. Book some attire first to unlock insights!");
-            println("");
-            tool::helper::drawLine(60, '-');
-            string waitInput;
-            do {
-                print("\nEnter '0' to return to previous menu: ");
-                getline(cin, waitInput);
-            } while (waitInput != "0");
+            tool::ui::pressZeroToReturn("previous menu", 60);
             return;
         }
 
@@ -601,13 +493,7 @@ namespace identity::authui {
             println("  No monthly active records available.");
         }
 
-        println("");
-        tool::helper::drawLine(60, '=');
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to previous menu: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("previous menu", 60);
     }
 
     void showAdminDashboard(const ::identity::auth::UserSession& session) {

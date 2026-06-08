@@ -95,9 +95,6 @@ public:
 	// UPDATE: Credit bank balance
 	static std::expected<bool, std::string> depositBalance(int acc_id, double amount);
 
-	// ========== UI HELPERS ==========
-	void displayCustomerProfileMenu(int user_id);
-	void displayBankAccountMenu(int user_id);
 };
 
 } // namespace identity::profile

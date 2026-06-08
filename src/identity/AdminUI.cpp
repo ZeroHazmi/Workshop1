@@ -1,6 +1,7 @@
 #include "identity/AdminUI.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "tool/input.h"
 #include "transaction/Rental/AdminStats.h"
 #include "DatabaseManager/DatabaseManager.h"
 #include <cppconn/resultset.h>
@@ -46,18 +47,11 @@ namespace identity::adminui {
             showAdminDashboard(session);
             
             int choice;
-            if (!(cin >> choice)) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                }
+            if (!tool::input::readInt(choice)) {
+                println("Invalid input. Please enter a number.");
+                tool::ui::handleInvalidAttempt(invalidAttempts);
                 continue;
             }
-            cin.ignore(1000, '\n');  // Clear input buffer
 
             switch (choice) {
                 case 1:
@@ -90,12 +84,7 @@ namespace identity::adminui {
                     break;
                 default:
                     println("Invalid option.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
-                        invalidAttempts = 0;
-                    } else {
+                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                         this_thread::sleep_for(chrono::milliseconds(1000));
                     }
             }
@@ -103,32 +92,16 @@ namespace identity::adminui {
     }
 
     void registerStaffAccount() {
-        tool::helper::clearScreen();
-
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("REGISTER STAFF ACCOUNT", 64);
-        tool::helper::drawLine(64, '=');
-
-        println("");
+        tool::ui::showHeader("REGISTER STAFF ACCOUNT", 64);
 
         // Use the new registration flow with staff role
         ::identity::auth::Auth::handleRegisterFlow("staff");
         
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 64);
     }
 
     void manageStaffAccount() {
-        tool::helper::clearScreen();
-
-        tool::helper::drawLine(78, '=');
-        tool::ui::displayTitle("MANAGE STAFF ACCOUNT", 78);
-        tool::helper::drawLine(78, '=');
-
-        println("");
+        tool::ui::showHeader("MANAGE STAFF ACCOUNT", 78);
 
         // 1. Fetch and display all registered staff in a formatted table
         auto& db = database::DatabaseManager::getInstance();
@@ -347,43 +320,22 @@ namespace identity::adminui {
                 println("  Invalid option.");
         }
 
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 64);
     }
 
     void viewAdminProfile(const ::identity::auth::UserSession& session) {
-        tool::helper::clearScreen();
-
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("ADMIN PROFILE", 64);
-        tool::helper::drawLine(64, '=');
-        println("");
+        tool::ui::showHeader("ADMIN PROFILE", 64);
 
         tool::ui::printField("Username", session.username);
         tool::ui::printField("Role", session.roles.front());
         tool::ui::printField("Admin Email", session.username + "@utem.edu.my");
         tool::ui::printField("Department", "FWCRS System Administration");
         
-        println("");
-        tool::helper::drawLine(64, '-');
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 64);
     }
 
     void registerNewShop() {
-        tool::helper::clearScreen();
-
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("REGISTER NEW SHOP", 64);
-        tool::helper::drawLine(64, '=');
-
-        println("");
+        tool::ui::showHeader("REGISTER NEW SHOP", 64);
 
         string shopName, location, phone;
         print("  Shop Name: ");
@@ -413,11 +365,7 @@ namespace identity::adminui {
             cout << "  [Error] Failed to register shop: " << res.error() << "\n";
         }
         
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 64);
     }
 
     void displayShopList() {
@@ -638,23 +586,14 @@ namespace identity::adminui {
             }
         }
 
-        tool::helper::drawLine(65, '=');
-        string waitInput;
-        do {
-            print("\nEnter '0' to return to dashboard: ");
-            getline(cin, waitInput);
-        } while (waitInput != "0");
+        tool::ui::pressZeroToReturn("dashboard", 65);
     }
 
     void showStaffManagementSubmenu(const ::identity::auth::UserSession& session) {
         bool inSubmenu = true;
         int invalidAttempts = 0;
         while (inSubmenu) {
-            tool::helper::clearScreen();
-            tool::helper::drawLine(64, '=');
-            tool::ui::displayTitle("STAFF MANAGEMENT", 64);
-            tool::helper::drawLine(64, '=');
-            println("");
+            tool::ui::showHeader("STAFF MANAGEMENT", 64);
             println("  [1] Register Staff Account");
             println("  [2] Manage Staff Account");
             println("  [0] Return to Dashboard");
@@ -662,42 +601,31 @@ namespace identity::adminui {
             print("  Select an option: ");
 
             int choice;
-            if (!(cin >> choice)) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                }
-                continue;
-            }
-            cin.ignore(1000, '\n');
-
-            switch (choice) {
-                case 1:
-                    invalidAttempts = 0;
-                    registerStaffAccount();
-                    break;
-                case 2:
-                    invalidAttempts = 0;
-                    manageStaffAccount();
-                    break;
-                case 0:
-                    invalidAttempts = 0;
-                    inSubmenu = false;
-                    break;
-                default:
-                    println("Invalid option.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
+            if (tool::input::readInt(choice)) {
+                switch (choice) {
+                    case 1:
                         invalidAttempts = 0;
-                    } else {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                        registerStaffAccount();
+                        break;
+                    case 2:
+                        invalidAttempts = 0;
+                        manageStaffAccount();
+                        break;
+                    case 0:
+                        invalidAttempts = 0;
+                        inSubmenu = false;
+                        break;
+                    default:
+                        println("Invalid option.");
+                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                            this_thread::sleep_for(chrono::milliseconds(1000));
+                        }
+                }
+            } else {
+                println("Invalid input. Please enter a number.");
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
             }
         }
     }
@@ -706,11 +634,7 @@ namespace identity::adminui {
         bool inSubmenu = true;
         int invalidAttempts = 0;
         while (inSubmenu) {
-            tool::helper::clearScreen();
-            tool::helper::drawLine(64, '=');
-            tool::ui::displayTitle("SHOP & INVENTORY MANAGEMENT", 64);
-            tool::helper::drawLine(64, '=');
-            println("");
+            tool::ui::showHeader("SHOP & INVENTORY MANAGEMENT", 64);
             println("  [1] Register New Shop");
             println("  [2] Display & Manage Shop Information");
             println("  [3] View Shop/Branch Inventory");
@@ -719,46 +643,35 @@ namespace identity::adminui {
             print("  Select an option: ");
 
             int choice;
-            if (!(cin >> choice)) {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                }
-                continue;
-            }
-            cin.ignore(1000, '\n');
-
-            switch (choice) {
-                case 1:
-                    invalidAttempts = 0;
-                    registerNewShop();
-                    break;
-                case 2:
-                    invalidAttempts = 0;
-                    manageShopInformation();
-                    break;
-                case 3:
-                    invalidAttempts = 0;
-                    viewShopInventory();
-                    break;
-                case 0:
-                    invalidAttempts = 0;
-                    inSubmenu = false;
-                    break;
-                default:
-                    println("Invalid option.");
-                    invalidAttempts++;
-                    if (invalidAttempts >= 3) {
-                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                        this_thread::sleep_for(chrono::seconds(5));
+            if (tool::input::readInt(choice)) {
+                switch (choice) {
+                    case 1:
                         invalidAttempts = 0;
-                    } else {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                        registerNewShop();
+                        break;
+                    case 2:
+                        invalidAttempts = 0;
+                        manageShopInformation();
+                        break;
+                    case 3:
+                        invalidAttempts = 0;
+                        viewShopInventory();
+                        break;
+                    case 0:
+                        invalidAttempts = 0;
+                        inSubmenu = false;
+                        break;
+                    default:
+                        println("Invalid option.");
+                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                            this_thread::sleep_for(chrono::milliseconds(1000));
+                        }
+                }
+            } else {
+                println("Invalid input. Please enter a number.");
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                }
             }
         }
     }
@@ -972,10 +885,7 @@ namespace identity::adminui {
         bool inStats = true;
         int invalidAttempts = 0;
         while (inStats) {
-            tool::helper::clearScreen();
-            tool::helper::drawLine(64, '=');
-            tool::ui::displayTitle("BUSINESS REPORTS & STATISTICS", 64);
-            tool::helper::drawLine(64, '=');
+            tool::ui::showHeader("BUSINESS REPORTS & STATISTICS", 64);
             
             // Show active filters
             if (activeShopIds.empty()) {
@@ -1011,10 +921,7 @@ namespace identity::adminui {
                 invalidAttempts = 0;
                 bool inReport = true;
                 while (inReport) {
-                    tool::helper::clearScreen();
-                    tool::helper::drawLine(64, '=');
-                    tool::ui::displayTitle("MONTHLY REVENUE TRENDS", 64);
-                    tool::helper::drawLine(64, '=');
+                    tool::ui::showHeader("MONTHLY REVENUE TRENDS", 64);
                     
                     // Header Filter Status
                     if (activeShopIds.empty()) {
@@ -1119,10 +1026,7 @@ namespace identity::adminui {
             } else if (choiceStr == "2") {
                 bool inReport = true;
                 while (inReport) {
-                    tool::helper::clearScreen();
-                    tool::helper::drawLine(64, '=');
-                    tool::ui::displayTitle("COSTUME POPULARITY & DEMAND", 64);
-                    tool::helper::drawLine(64, '=');
+                    tool::ui::showHeader("COSTUME POPULARITY & DEMAND", 64);
                     
                     // Header Filter Status
                     if (activeShopIds.empty()) {
@@ -1201,10 +1105,7 @@ namespace identity::adminui {
             } else if (choiceStr == "3") {
                 bool inReport = true;
                 while (inReport) {
-                    tool::helper::clearScreen();
-                    tool::helper::drawLine(64, '=');
-                    tool::ui::displayTitle("BRANCH PERFORMANCE & REVENUE SHARE", 64);
-                    tool::helper::drawLine(64, '=');
+                    tool::ui::showHeader("BRANCH PERFORMANCE & REVENUE SHARE", 64);
                     
                     // Header Filter Status
                     if (activeShopIds.empty()) {
@@ -1278,10 +1179,7 @@ namespace identity::adminui {
             } else if (choiceStr == "4") {
                 bool inReport = true;
                 while (inReport) {
-                    tool::helper::clearScreen();
-                    tool::helper::drawLine(64, '=');
-                    tool::ui::displayTitle("INVENTORY QUALITY AUDIT", 64);
-                    tool::helper::drawLine(64, '=');
+                    tool::ui::showHeader("INVENTORY QUALITY AUDIT", 64);
                     
                     // Header Filter Status (Time Range N/A since physical condition represents immediate current state)
                     if (activeShopIds.empty()) {
@@ -1343,10 +1241,7 @@ namespace identity::adminui {
                 int invalidAttemptsLedger = 0;
 
                 while (inLedger) {
-                    tool::helper::clearScreen();
-                    tool::helper::drawLine(118, '=');
-                    tool::ui::displayTitle("INVOICE LEDGER & AUDITING", 118);
-                    tool::helper::drawLine(118, '=');
+                    tool::ui::showHeader("INVOICE LEDGER & AUDITING", 118);
 
                     // Filter Status
                     if (activeShopIds.empty()) {
@@ -1448,14 +1343,7 @@ namespace identity::adminui {
                     tool::helper::drawLine(118, '=');
 
                     // Pagination details
-                    if (totalPages > 1) {
-                        string pageInfo = format("Page {} of {} | Total: {}", currentPage, totalPages, totalItems);
-                        int padding = (118 - static_cast<int>(pageInfo.length())) / 2;
-                        string spaces(padding > 0 ? padding : 0, ' ');
-                        println("{}{}", spaces, pageInfo);
-                        tool::helper::drawLine(118, '-');
-                        println("  [N] Next Page      [P] Previous Page");
-                    }
+                    tool::ui::printPaginationFooter(currentPage, totalPages, totalItems, 118);
                     println("  [F] Filter Status  [0] Back to Reports Gateway");
                     tool::helper::drawLine(118, '-');
                     print("  Enter selection: ");
@@ -1489,12 +1377,7 @@ namespace identity::adminui {
                         currentPage = 1;
                     } else {
                         println("  Invalid choice.");
-                        invalidAttemptsLedger++;
-                        if (invalidAttemptsLedger >= 3) {
-                            println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                            this_thread::sleep_for(chrono::seconds(5));
-                            invalidAttemptsLedger = 0;
-                        } else {
+                        if (!tool::ui::handleInvalidAttempt(invalidAttemptsLedger)) {
                             this_thread::sleep_for(chrono::milliseconds(1000));
                         }
                     }
@@ -1518,12 +1401,7 @@ namespace identity::adminui {
                 inStats = false;
             } else {
                 println("Invalid option.");
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
-                } else {
+                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     this_thread::sleep_for(chrono::milliseconds(1000));
                 }
             }
