@@ -13,4 +13,6 @@ namespace tool::date {
     // Calculates difference in days (endDate - startDate)
     int getDaysDifference(const std::string& startDate, const std::string& endDate);
 
+    // Normalizes dynamic date format (e.g. 6/3/2026 -> 06/03/2026)
+    std::string normalizeDateStr(const std::string& dateStr);
 }

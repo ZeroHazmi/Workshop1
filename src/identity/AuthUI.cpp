@@ -67,6 +67,7 @@ namespace identity::authui {
 
     void handleCustomerDashboard(const ::identity::auth::UserSession& session) {
         bool inDashboard = true;
+        int invalidAttempts = 0;
         while (inDashboard) {
             showCustomerDashboard(session);
             
@@ -74,27 +75,38 @@ namespace identity::authui {
             if (!(cin >> subChoice)) {
                 cin.clear();
                 cin.ignore(1000, '\n');
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                }
                 continue;
             }
             cin.ignore(1000, '\n');  // Clear the input buffer after reading choice
 
             switch (subChoice) {
                 case 1: 
+                    invalidAttempts = 0;
                     // inventory::browseApparel
                     inventory::ui::showCatalog(session);
                     break;
                 case 2: 
+                    invalidAttempts = 0;
                     handleRentalHistoryMenu(session); 
                     break;
                 case 3: 
+                    invalidAttempts = 0;
                     // profile::updateProfile(session.userid);
                     viewProfile(session); 
                     break;
                 case 4: 
+                    invalidAttempts = 0;
                     // profile::manageBank(session.userid);
                     manageBankAccount(session);
                     break;
                 case 0:
+                    invalidAttempts = 0;
                     println("\nLogging out...");
                     inDashboard = false;
 
@@ -109,6 +121,12 @@ namespace identity::authui {
                     break;
                 default:
                     println("Invalid option.");
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    }
             }
         }
     }
@@ -142,118 +160,163 @@ namespace identity::authui {
     }
 
     void manageBankAccount(const ::identity::auth::UserSession& session) {
-        tool::helper::clearScreen();
-        tool::helper::drawLine(64, '=');
-        tool::ui::displayTitle("BANK ACCOUNT DETAILS", 64);
-        tool::helper::drawLine(64, '=');
-        
-        println(""); // Spacer
+        bool inBankMenu = true;
+        int invalidAttempts = 0;
+        while (inBankMenu) {
+            tool::helper::clearScreen();
+            tool::helper::drawLine(64, '=');
+            tool::ui::displayTitle("BANK ACCOUNT DETAILS", 64);
+            tool::helper::drawLine(64, '=');
+            
+            println(""); // Spacer
 
-        auto bankOpt = ::identity::profile::Profile::getBankAccount(session.userid);
-        if (bankOpt) {
-            auto& bank = bankOpt.value();
-            tool::ui::printField("Account Holder", bank.acc_holder);
-            tool::ui::printField("Bank Name", bank.bank_name);
-            
-            // Mask account number for security: e.g. show only last 4 digits
-            std::string acc = bank.acc_number;
-            if (acc.length() > 4) {
-                acc = std::string(acc.length() - 4, '*') + acc.substr(acc.length() - 4);
-            }
-            tool::ui::printField("Account Number", acc);
-            tool::ui::printField("Balance", std::format("RM {:.2f}", bank.balance));
-            
-            println("");
-            tool::helper::drawLine(50, '-');
-            println("\n  [1] Deposit Funds / Add Balance");
-            println("  [2] Remove Linked Bank Account");
-            println("  [0] Back to Dashboard");
-            print("\n  Enter selection: ");
-            int option;
-            if (cin >> option) {
-                if (option == 1) {
-                    cin.ignore(1000, '\n');
-                    print("  Enter deposit amount: RM ");
-                    double amount;
-                    if (cin >> amount && amount > 0) {
-                        cin.ignore(1000, '\n');
-                        auto depositRes = ::identity::profile::Profile::depositBalance(bank.acc_id, amount);
-                        if (depositRes) {
-                            println("\n  Successfully deposited RM {:.2f} to your account!", amount);
-                        } else {
-                            println("\n  Deposit failed: {}", depositRes.error());
-                        }
-                    } else {
-                        cin.clear();
-                        cin.ignore(1000, '\n');
-                        println("\n  Invalid deposit amount.");
-                    }
-                    string waitInput;
-                    do {
-                        print("\nEnter '0' to return to dashboard: ");
-                        getline(cin, waitInput);
-                    } while (waitInput != "0");
-                    return;
-                } else if (option == 2) {
-                    cin.ignore(1000, '\n');
-                    auto removeRes = ::identity::profile::Profile::removeBankAccount(bank.acc_id);
-                    if (removeRes) {
-                        println("\n  Bank account successfully unlinked.");
-                    } else {
-                        println("\n  Failed to unlink bank account: {}", removeRes.error());
-                    }
-                    string waitInput;
-                    do {
-                        print("\nEnter '0' to return to dashboard: ");
-                        getline(cin, waitInput);
-                    } while (waitInput != "0");
-                    return;
-                } else {
-                    cin.ignore(1000, '\n');
-                    return;
+            auto bankOpt = ::identity::profile::Profile::getBankAccount(session.userid);
+            if (bankOpt) {
+                auto& bank = bankOpt.value();
+                tool::ui::printField("Account ID", bank.unique_id);
+                tool::ui::printField("Account Holder", bank.acc_holder);
+                tool::ui::printField("Bank Name", bank.bank_name);
+                
+                // Mask account number for security: e.g. show only last 4 digits
+                std::string acc = bank.acc_number;
+                if (acc.length() > 4) {
+                    acc = std::string(acc.length() - 4, '*') + acc.substr(acc.length() - 4);
                 }
-            } else {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                return;
-            }
-        } else {
-            println("  No bank account linked to your profile yet.");
-            println("\n  [1] Link a Bank Account");
-            println("  [0] Back to Dashboard");
-            print("\n  Enter selection: ");
-            
-            int choice;
-            if (cin >> choice && choice == 1) {
-                cin.ignore(1000, '\n');
-                tool::helper::clearScreen();
-                tool::ui::displayTitle("LINK BANK ACCOUNT", 50);
+                tool::ui::printField("Account Number", acc);
+                tool::ui::printField("Balance", std::format("RM {:.2f}", bank.balance));
+                
                 println("");
-                
-                std::string bankName, accNum, holder;
-                print("  Enter Bank Name: ");
-                getline(cin, bankName);
-                print("  Enter Account Number: ");
-                getline(cin, accNum);
-                print("  Enter Account Holder Name: ");
-                getline(cin, holder);
-                
-                auto linkResult = ::identity::profile::Profile::linkBankAccount(session.userid, bankName, accNum, holder);
-                if (linkResult) {
-                    println("\n  Bank account linked successfully!");
+                tool::helper::drawLine(50, '-');
+                println("\n  [1] Deposit Funds / Add Balance");
+                println("  [2] Remove Linked Bank Account");
+                println("  [0] Back to Dashboard");
+                print("\n  Enter selection: ");
+                int option;
+                if (cin >> option) {
+                    cin.ignore(1000, '\n');
+                    if (option == 1) {
+                        invalidAttempts = 0;
+                        print("  Enter deposit amount: RM ");
+                        double amount;
+                        if (cin >> amount && amount > 0) {
+                            cin.ignore(1000, '\n');
+                            auto depositRes = ::identity::profile::Profile::depositBalance(bank.acc_id, amount);
+                            if (depositRes) {
+                                println("\n  Successfully deposited RM {:.2f} to your account!", amount);
+                            } else {
+                                println("\n  Deposit failed: {}", depositRes.error());
+                            }
+                        } else {
+                            cin.clear();
+                            cin.ignore(1000, '\n');
+                            println("\n  Invalid deposit amount.");
+                        }
+                        string waitInput;
+                        do {
+                            print("\nEnter '0' to return to bank menu: ");
+                            getline(cin, waitInput);
+                        } while (waitInput != "0");
+                    } else if (option == 2) {
+                        invalidAttempts = 0;
+                        auto removeRes = ::identity::profile::Profile::removeBankAccount(bank.acc_id);
+                        if (removeRes) {
+                            println("\n  Bank account successfully unlinked.");
+                        } else {
+                            println("\n  Failed to unlink bank account: {}", removeRes.error());
+                        }
+                        string waitInput;
+                        do {
+                            print("\nEnter '0' to return to bank menu: ");
+                            getline(cin, waitInput);
+                        } while (waitInput != "0");
+                    } else if (option == 0) {
+                        invalidAttempts = 0;
+                        inBankMenu = false;
+                    } else {
+                        println("  Invalid selection.");
+                        invalidAttempts++;
+                        if (invalidAttempts >= 3) {
+                            println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                            this_thread::sleep_for(chrono::seconds(5));
+                            invalidAttempts = 0;
+                        } else {
+                            this_thread::sleep_for(chrono::milliseconds(1000));
+                        }
+                    }
                 } else {
-                    println("\n  Failed to link bank account: {}", linkResult.error());
+                    cin.clear();
+                    cin.ignore(1000, '\n');
+                    println("  Invalid selection.");
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
                 }
-                string waitInput;
-                do {
-                    print("\nEnter '0' to return to dashboard: ");
-                    getline(cin, waitInput);
-                } while (waitInput != "0");
-                return;
             } else {
-                cin.clear();
-                cin.ignore(1000, '\n');
-                return;
+                println("  No bank account linked to your profile yet.");
+                println("\n  [1] Link a Bank Account");
+                println("  [0] Back to Dashboard");
+                print("\n  Enter selection: ");
+                
+                int choice;
+                if (cin >> choice) {
+                    cin.ignore(1000, '\n');
+                    if (choice == 1) {
+                        invalidAttempts = 0;
+                        tool::helper::clearScreen();
+                        tool::ui::displayTitle("LINK BANK ACCOUNT", 50);
+                        println("");
+                        
+                        std::string bankName, accNum, holder;
+                        print("  Enter Bank Name: ");
+                        getline(cin, bankName);
+                        print("  Enter Account Number: ");
+                        getline(cin, accNum);
+                        print("  Enter Account Holder Name: ");
+                        getline(cin, holder);
+                        
+                        auto linkResult = ::identity::profile::Profile::linkBankAccount(session.userid, bankName, accNum, holder);
+                        if (linkResult) {
+                            println("\n  Bank account linked successfully!");
+                        } else {
+                            println("\n  Failed to link bank account: {}", linkResult.error());
+                        }
+                        string waitInput;
+                        do {
+                            print("\nEnter '0' to return to bank menu: ");
+                            getline(cin, waitInput);
+                        } while (waitInput != "0");
+                    } else if (choice == 0) {
+                        invalidAttempts = 0;
+                        inBankMenu = false;
+                    } else {
+                        println("  Invalid selection.");
+                        invalidAttempts++;
+                        if (invalidAttempts >= 3) {
+                            println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                            this_thread::sleep_for(chrono::seconds(5));
+                            invalidAttempts = 0;
+                        } else {
+                            this_thread::sleep_for(chrono::milliseconds(1000));
+                        }
+                    }
+                } else {
+                    cin.clear();
+                    cin.ignore(1000, '\n');
+                    println("  Invalid selection.");
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
+                }
             }
         }
     }
@@ -288,8 +351,8 @@ namespace identity::authui {
         }
 
         // Print header for the table
-        std::vector<int> colWidths = {5, 20, 10, 10, 10, 10};
-        tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "RENT DATE", "RET DATE", "PAID FEE", "STATUS"});
+        std::vector<int> colWidths = {12, 20, 11, 12, 10, 10};
+        tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "RENTAL DATE", "RETURN DATE", "PAID FEE", "STATUS"});
         tool::helper::drawLine(75, '-');
 
         for (const auto& item : history) {
@@ -297,7 +360,7 @@ namespace identity::authui {
             std::string actualRet = item.actual_return_date;
             
             tool::ui::printRow(colWidths, {
-                to_string(item.rental_id),
+                item.unique_id,
                 item.item_name,
                 item.rental_date,
                 actualRet,
@@ -316,6 +379,7 @@ namespace identity::authui {
 
     void handleRentalHistoryMenu(const ::identity::auth::UserSession& session) {
         bool inSubMenu = true;
+        int invalidAttempts = 0;
         while (inSubMenu) {
             tool::helper::clearScreen();
             tool::helper::drawLine(50, '=');
@@ -333,23 +397,39 @@ namespace identity::authui {
             if (!(cin >> choice)) {
                 cin.clear();
                 cin.ignore(1000, '\n');
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                }
                 continue;
             }
             cin.ignore(1000, '\n');
 
             switch (choice) {
                 case 1:
+                    invalidAttempts = 0;
                     viewRentalHistory(session);
                     break;
                 case 2:
+                    invalidAttempts = 0;
                     viewBookingBehaviour(session);
                     break;
                 case 0:
+                    invalidAttempts = 0;
                     inSubMenu = false;
                     break;
                 default:
                     println("  Invalid selection.");
-                    this_thread::sleep_for(chrono::milliseconds(1000));
+                    invalidAttempts++;
+                    if (invalidAttempts >= 3) {
+                        println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                        this_thread::sleep_for(chrono::seconds(5));
+                        invalidAttempts = 0;
+                    } else {
+                        this_thread::sleep_for(chrono::milliseconds(1000));
+                    }
             }
         }
     }
@@ -364,7 +444,7 @@ namespace identity::authui {
             println("  Error retrieving statistics: {}", statsRes.error());
             string waitInput;
             do {
-                print("\nEnter '0' to return to gateway: ");
+                print("\nEnter '0' to return to previous menu: ");
                 getline(cin, waitInput);
             } while (waitInput != "0");
             return;
@@ -384,22 +464,49 @@ namespace identity::authui {
             tool::helper::drawLine(60, '-');
             string waitInput;
             do {
-                print("\nEnter '0' to return to gateway: ");
+                print("\nEnter '0' to return to previous menu: ");
                 getline(cin, waitInput);
             } while (waitInput != "0");
             return;
         }
 
+        // Color palette for graphs
+        const std::vector<std::string> barColors = {
+            "\033[96m", // Bright Cyan
+            "\033[95m", // Bright Magenta
+            "\033[93m", // Bright Yellow
+            "\033[94m", // Bright Blue
+            "\033[92m", // Bright Green
+            "\033[91m"  // Bright Red
+        };
+
         // 1. POPULAR CATEGORIES (Horizontal Bar Chart)
         println("  [1] CATEGORY POPULARITY");
         println("  --------------------------------------------------------");
         int maxCount = stats.categories.empty() ? 0 : stats.categories[0].count;
+        int maxBarWidth = 25;
+
+        size_t maxCategoryLen = 20; // default minimum width
+        for (const auto& cat : stats.categories) {
+            if (cat.category.length() > maxCategoryLen) {
+                maxCategoryLen = cat.category.length();
+            }
+        }
+
+        size_t catColorIdx = 0;
         for (const auto& cat : stats.categories) {
             int percentage = (cat.count * 100) / totalRentals;
-            int barWidth = maxCount > 0 ? (cat.count * 15) / maxCount : 0;
-            std::string bar = std::string(barWidth, '#'); // ASCII solid bar
-            std::string spaces = std::string(15 - barWidth, ' ');
-            println("  {:<15} : [{}{}] {}% ({})", cat.category, bar, spaces, percentage, cat.count);
+            int barWidth = maxCount > 0 ? (cat.count * maxBarWidth) / maxCount : 0;
+            std::string bar = "";
+            for (int i = 0; i < barWidth; ++i) {
+                bar += "█";
+            }
+            std::string spaces = std::string(maxBarWidth - barWidth, ' ');
+            std::string color = barColors[catColorIdx % barColors.size()];
+            catColorIdx++;
+
+            std::print("  {:<{}} : [ {}{}{} ] {}% ({} rentals)\n", 
+                       cat.category, maxCategoryLen, color, bar, "\033[0m" + spaces, percentage, cat.count);
         }
         println("");
 
@@ -412,13 +519,15 @@ namespace identity::authui {
         int sumReturn = onTimeTotal + lateTotal;
 
         if (sumReturn > 0) {
-            int onTimeBar = (onTimeTotal * 30) / sumReturn;
-            int lateBar = 30 - onTimeBar;
-            std::string onTimeStr = std::string(onTimeBar, '=');
-            std::string lateStr = std::string(lateBar, 'x');
+            int onTimeBar = (onTimeTotal * 40) / sumReturn; // 40 chars total
+            int lateBar = 40 - onTimeBar;
+            std::string onTimeStr = "";
+            for (int i = 0; i < onTimeBar; ++i) onTimeStr += "█";
+            std::string lateStr = "";
+            for (int i = 0; i < lateBar; ++i) lateStr += "░";
             
-            println("  Split Ratio: [{}{}]", onTimeStr, lateStr);
-            println("  Legend     : (=) On-Time [{} | {}%]  (x) Overdue [{} | {}%]", 
+            print("  Split Ratio: [ \033[92m{}\033[91m{}\033[0m ]\n", onTimeStr, lateStr);
+            print("  Legend     : (\033[92m█\033[0m) On-Time [{} | {}%]  (\033[91m░\033[0m) Overdue [{} | {}%]\n", 
                     onTimeTotal, (onTimeTotal * 100) / sumReturn,
                     lateTotal, (lateTotal * 100) / sumReturn);
         } else {
@@ -436,40 +545,58 @@ namespace identity::authui {
         }
 
         if (maxMonthCount > 0) {
-            const int maxHeight = 5;
+            println("  Total (Rentals)");
+            int maxHeight = 8;
             for (int h = maxHeight; h >= 1; --h) {
-                print("    ");
+                int threshold = (maxMonthCount * h) / maxHeight;
+                std::print("  {:3d} | ", threshold);
+                size_t mIdx = 0;
                 for (const auto& m : stats.monthly_trends) {
-                    int scaledHeight = (m.count * maxHeight) / maxMonthCount;
-                    if (scaledHeight >= h) {
-                        print("   ###   ");
+                    string color = barColors[mIdx % barColors.size()];
+                    mIdx++;
+                    if (m.count >= threshold && m.count > 0) {
+                        std::print("   {}{}{}   ", color, "███", "\033[0m");
                     } else {
-                        print("         ");
+                        std::print("         ");
                     }
                 }
-                println("");
+                std::print("\n");
             }
             
-            // X-Axis
-            print("    ");
+            // X-Axis base line (perfectly aligned directly above month names with no vertical white spaces)
+            std::print("      +");
             for (size_t i = 0; i < stats.monthly_trends.size(); ++i) {
-                print("=========");
+                std::print("---------");
             }
+            std::print("\n       ");
+
+            // Month Labels (centered and formatted to 6 characters: Month Yr)
+            for (const auto& m : stats.monthly_trends) {
+                std::string displayMonth = m.month_name;
+                if (displayMonth.length() == 8 && displayMonth[3] == ' ') {
+                    displayMonth = displayMonth.substr(0, 3) + " " + displayMonth.substr(6, 2);
+                } else if (displayMonth.length() > 6) {
+                    displayMonth = displayMonth.substr(0, 6);
+                }
+                std::print("  {:^6} ", displayMonth);
+            }
+            std::print("\n\n");
+
+            // Print X-axis label centered
+            int xLabelWidth = 9 * static_cast<int>(stats.monthly_trends.size());
+            int xLabelPad = 7 + (xLabelWidth - 6) / 2;
+            if (xLabelPad < 0) xLabelPad = 0;
+            println("{}{}", string(xLabelPad, ' '), "Months");
             println("");
 
-            // Prints count under the bars
-            print("    ");
+            // Tabular details for clean precise reference
+            tool::helper::drawLine(60, '-');
+            print("{}\n", format("  {:<20} | {:<20}", "MONTH", "RENTALS COUNT"));
+            tool::helper::drawLine(60, '-');
             for (const auto& m : stats.monthly_trends) {
-                print("   ({:02d})  ", m.count);
+                print("{}\n", format("  {:<20} | {:<18d}", m.month_name, m.count));
             }
-            println("");
-
-            // Month Labels
-            print("    ");
-            for (const auto& m : stats.monthly_trends) {
-                print("   {:<3}   ", m.month_name.substr(0, 3));
-            }
-            println("");
+            tool::helper::drawLine(60, '=');
         } else {
             println("  No monthly active records available.");
         }
@@ -478,7 +605,7 @@ namespace identity::authui {
         tool::helper::drawLine(60, '=');
         string waitInput;
         do {
-            print("\nEnter '0' to return to gateway: ");
+            print("\nEnter '0' to return to previous menu: ");
             getline(cin, waitInput);
         } while (waitInput != "0");
     }

@@ -6,6 +6,10 @@
 #include <chrono>
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "DatabaseManager/DatabaseManager.h"
 #include "identity/Auth/Auth.h"
 #include "identity/AuthUI.h"
@@ -17,6 +21,10 @@
 using namespace std;
 
 int main() {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
 
     if (!database::DatabaseManager::getInstance().connect()) {
         println(stderr, "Application failed to start: Database connection error.");
@@ -29,6 +37,7 @@ int main() {
     // Formal Landing Screen
     ::identity::authui::showSplashScreen();
 
+    int invalidAttempts = 0;
     bool systemRunning = true;
     while (systemRunning) {
         println("\n--- MAIN GATEWAY ---");
@@ -43,12 +52,21 @@ int main() {
             cin.clear();
             cin.ignore(1000, '\n');
             println("Invalid input. Please enter a number.");
+            invalidAttempts++;
+            if (invalidAttempts >= 3) {
+                println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                this_thread::sleep_for(chrono::seconds(5));
+                invalidAttempts = 0;
+                tool::helper::clearScreen();
+                ::identity::authui::showSplashScreen();
+            }
             continue;
         }
 
         switch (choice) {
             case 1:
             {
+                invalidAttempts = 0;
                 auto sessionResult = authService.handleLoginFlow();
                 if (sessionResult) {
                     auto& session = sessionResult.value();
@@ -64,20 +82,33 @@ int main() {
                         // Default to customer dashboard
                         ::identity::authui::handleCustomerDashboard(session);
                     }
+                } else {
+                    tool::helper::clearScreen();
+                    ::identity::authui::showSplashScreen();
                 }
                 break;
             }
                 
             case 2:
+                invalidAttempts = 0;
                 // handleRegisterFlow handles all registration inputs and DB logic
                 authService.handleRegisterFlow("customer");
                 break;
             case 3:
+                invalidAttempts = 0;
                 println("Shutting down FWCRS. Goodbye.");
                 systemRunning = false;
                 break;
             default:
                 println("Invalid selection. Please try again.");
+                invalidAttempts++;
+                if (invalidAttempts >= 3) {
+                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
+                    this_thread::sleep_for(chrono::seconds(5));
+                    invalidAttempts = 0;
+                    tool::helper::clearScreen();
+                    ::identity::authui::showSplashScreen();
+                }
         }
     }
     return 0;

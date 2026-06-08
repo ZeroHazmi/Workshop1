@@ -9,7 +9,7 @@ namespace identity::users {
 
 expected<vector<identify::User>, string> Users::getAllUsers() {
 	vector<identify::User> users;
-	string query = "SELECT user_id, username, password, roles FROM USERS WHERE is_deleted = 0;";
+	string query = "SELECT user_id, unique_id, username, password, roles FROM USERS WHERE is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
 
@@ -21,6 +21,7 @@ expected<vector<identify::User>, string> Users::getAllUsers() {
 	while (rs->next()) {
 		identify::User user;
 		user.user_id = rs->getInt("user_id");
+		user.unique_id = rs->getString("unique_id");
 		user.username = rs->getString("username");
 		user.password = rs->getString("password");
 
@@ -43,7 +44,7 @@ expected<vector<identify::User>, string> Users::getAllUsers() {
 }
 
 expected<identify::User, string> Users::getUserById(int user_id) {
-	string query = "SELECT user_id, username, password, roles FROM USERS WHERE user_id = " 
+	string query = "SELECT user_id, unique_id, username, password, roles FROM USERS WHERE user_id = " 
 					   + to_string(user_id) + " AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
@@ -56,6 +57,7 @@ expected<identify::User, string> Users::getUserById(int user_id) {
 	if (rs->next()) {
 		identify::User user;
 		user.user_id = rs->getInt("user_id");
+		user.unique_id = rs->getString("unique_id");
 		user.username = rs->getString("username");
 		user.password = rs->getString("password");
 
@@ -78,7 +80,7 @@ expected<identify::User, string> Users::getUserById(int user_id) {
 }
 
 expected<identify::User, string> Users::getUserByUsername(string_view username) {
-	string query = "SELECT user_id, username, password, roles FROM USERS WHERE username = '" 
+	string query = "SELECT user_id, unique_id, username, password, roles FROM USERS WHERE username = '" 
 					   + string(username) + "' AND is_deleted = 0;";
 
 	auto result = database::DatabaseManager::getInstance().executeQuery(query);
@@ -91,6 +93,43 @@ expected<identify::User, string> Users::getUserByUsername(string_view username) 
 	if (rs->next()) {
 		identify::User user;
 		user.user_id = rs->getInt("user_id");
+		user.unique_id = rs->getString("unique_id");
+		user.username = rs->getString("username");
+		user.password = rs->getString("password");
+
+		string rolesStr = rs->getString("roles");
+		if (!rolesStr.empty()) {
+			size_t pos = 0;
+			while ((pos = rolesStr.find(',')) != string::npos) {
+				user.roles.push_back(rolesStr.substr(0, pos));
+				rolesStr.erase(0, pos + 1);
+			}
+			user.roles.push_back(rolesStr);
+		}
+
+		delete rs;
+		return user;
+	}
+
+	delete rs;
+	return unexpected("User not found.");
+}
+
+expected<identify::User, string> Users::getUserByUniqueId(string_view unique_id) {
+	string query = "SELECT user_id, unique_id, username, password, roles FROM USERS WHERE unique_id = '" 
+					   + string(unique_id) + "' AND is_deleted = 0;";
+
+	auto result = database::DatabaseManager::getInstance().executeQuery(query);
+
+	if (!result) {
+		return unexpected(result.error());
+	}
+
+	sql::ResultSet* rs = result.value();
+	if (rs->next()) {
+		identify::User user;
+		user.user_id = rs->getInt("user_id");
+		user.unique_id = rs->getString("unique_id");
 		user.username = rs->getString("username");
 		user.password = rs->getString("password");
 
@@ -120,9 +159,13 @@ expected<int, string> Users::createStaffUser(
 	string_view phone_no,
 	int shop_id
 ) {
-	// Insert user with role "staff"
+	// Generate unique user ID
+	string userUniqueId = database::DatabaseManager::generateUniqueId("USR");
+	
+	// Insert user with role "staff" and unique_id
 	string insertUserQuery =
-		"INSERT INTO USERS (username, password, roles) VALUES ('" +
+		"INSERT INTO USERS (unique_id, username, password, roles) VALUES ('" +
+		userUniqueId + "', '" +
 		string(username) + "', '" +
 		string(password) + "', 'staff');";
 
@@ -145,9 +188,13 @@ expected<int, string> Users::createStaffUser(
 	if (rs->next()) {
 		int newUserId = rs->getInt("user_id");
 
-		// Insert STAFF record
+		// Generate unique staff ID
+		string staffUniqueId = database::DatabaseManager::generateUniqueId("STF");
+
+		// Insert STAFF record with unique_id
 		string insertStaffQuery =
-			"INSERT INTO STAFF (user_id, shop_id, staff_name, position, phone_no) VALUES (" +
+			"INSERT INTO STAFF (unique_id, user_id, shop_id, staff_name, position, phone_no) VALUES ('" +
+			staffUniqueId + "', " +
 			to_string(newUserId) + ", " +
 			to_string(shop_id) + ", '" +
 			string(staff_name) + "', '" +
@@ -242,7 +289,7 @@ void Users::displayAllUsers() {
 		return;
 	}
 
-	println("\n{:<10} {:<20} {:<20}", "User ID", "Username", "Roles");
+	println("\n{:<15} {:<20} {:<20}", "User ID", "Username", "Roles");
 	println("{:-<64}", "");
 
 	for (const auto& user : usersResult.value()) {
@@ -251,7 +298,7 @@ void Users::displayAllUsers() {
 			roles += user.roles[i];
 			if (i < user.roles.size() - 1) roles += ", ";
 		}
-		println("{:<10} {:<20} {:<20}", user.user_id, user.username, roles);
+		println("{:<15} {:<20} {:<20}", user.unique_id, user.username, roles);
 	}
 	println("");
 }

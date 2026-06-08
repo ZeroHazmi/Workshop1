@@ -5,6 +5,7 @@
 
 struct Shop {
 	int shop_id; // Primary Key
+	std::string unique_id;
 	std::string shop_name;
 	std::string location;
 	std::string shop_phone;

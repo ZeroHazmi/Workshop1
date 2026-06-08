@@ -10,6 +10,7 @@ namespace inventory::apparel {
 
     struct ApparelCatalog {
         int catalog_id;
+        std::string unique_id;
         int shop_id;
         std::string name;
         std::string description;
@@ -20,6 +21,7 @@ namespace inventory::apparel {
 
     struct ApparelItem {
         int item_id;
+        std::string unique_id;
         int catalog_id;
         std::string size;
         std::string status;
@@ -28,6 +30,7 @@ namespace inventory::apparel {
 
     struct CatalogDisplayItem {
         int catalog_id;
+        std::string unique_id;
         int shop_id;
         std::string name;
         std::string category;
@@ -52,6 +55,9 @@ namespace inventory::apparel {
 
     // Get a specific catalog item by its ID
     std::expected<ApparelCatalog, std::string> getApparelById(int catalog_id);
+
+    // Get a specific catalog item by its unique ID
+    std::expected<ApparelCatalog, std::string> getApparelByUniqueId(std::string_view unique_id);
 
     // Get available sizes and quantities for a given catalog
     std::expected<std::vector<std::pair<std::string, int>>, std::string> getAvailableSizes(int catalog_id);

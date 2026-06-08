@@ -30,6 +30,7 @@ set(SOURCES
 	src/inventory/InventoryUI.cpp
 	src/transaction/Rental_Details/Rental_Details.cpp
 	src/transaction/Rental/Rental.cpp
+	src/transaction/Rental/AdminStats.cpp
 	src/transaction/RentalUI.cpp
 	src/DatabaseManager/DatabaseManager.cpp
 	src/tool/helper.cpp

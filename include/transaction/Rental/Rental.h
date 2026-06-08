@@ -6,6 +6,7 @@
 
 struct Rental {
     int rental_id; // Primary Key
+    std::string unique_id;
     int shop_id;   // Foreign Key -> Shops.shop_id
     int cust_id;   // Foreign Key -> Customers.cust_id
     std::string rental_date;
@@ -17,6 +18,7 @@ namespace transaction::rental {
 
     struct RentalHistoryItem {
         int rental_id;
+        std::string unique_id;
         std::string rental_date;
         std::string expected_return_date;
         std::string actual_return_date;
@@ -30,6 +32,7 @@ namespace transaction::rental {
 
     struct ActiveRentalItem {
         int rental_id;
+        std::string unique_id;
         std::string customer_name;
         std::string item_name;
         std::string size;
@@ -80,7 +83,7 @@ namespace transaction::rental {
     std::expected<std::vector<ActiveRentalItem>, std::string> getActiveRentals(const std::string& searchTerm = "");
 
     std::expected<std::string, std::string> processCostumeReturn(
-        int rental_id, 
+        const std::string& rental_unique_id, 
         const std::string& actual_return_date, 
         const std::string& condition
     );

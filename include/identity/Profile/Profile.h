@@ -10,6 +10,7 @@ namespace identity::profile {
 
 struct BankAccount {
     int acc_id;   // Primary Key
+    std::string unique_id;
     int user_id;  // Foreign Key -> Users.user_id
     std::string bank_name;
     std::string acc_number;
@@ -19,6 +20,7 @@ struct BankAccount {
 
 struct CustomerProfile {
 	int cust_id;
+	std::string unique_id;
 	int user_id;
 	std::string fullname;
 	std::string phone_no;
@@ -27,6 +29,7 @@ struct CustomerProfile {
 
 struct StaffProfile {
 	int staff_id;
+	std::string unique_id;
 	int user_id;
 	int shop_id;
 	std::string staff_name;

@@ -9,6 +9,7 @@
 namespace identify {
 	struct User {
 		int user_id; // Primary Key
+		std::string unique_id;
 		std::string username;
 		std::string password;
 		std::vector<std::string> roles;
@@ -16,6 +17,7 @@ namespace identify {
 
 	struct StaffRecord {
 		int staff_id; // Primary Key
+		std::string unique_id;
 		int user_id;  // Foreign Key -> Users.user_id
 		int shop_id;  // Foreign Key -> Shops.shop_id
 		std::string staff_name;
@@ -25,6 +27,7 @@ namespace identify {
 
 	struct Customer {
 		int cust_id; // Primary Key
+		std::string unique_id;
 		int user_id; // Foreign Key -> Users.user_id
 		std::string fullname;
 		std::string phone_no;
@@ -47,6 +50,9 @@ public:
 
 	// READ: Get user by username
 	static std::expected<identify::User, std::string> getUserByUsername(std::string_view username);
+
+	// READ: Get user by Unique ID
+	static std::expected<identify::User, std::string> getUserByUniqueId(std::string_view unique_id);
 
 	// CREATE: Add new staff user (Admin operation)
 	static std::expected<int, std::string> createStaffUser(

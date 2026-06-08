@@ -31,10 +31,18 @@ namespace tool::ui {
     void printRow(const vector<int>& widths, const vector<string>& values) {
         string row = " ";
         for (size_t i = 0; i < values.size(); ++i) {
-            // Manually pad the string to the specified width
+            int colWidth = widths[i] < 0 ? 0 : widths[i];
+            size_t w = static_cast<size_t>(colWidth);
             string padded = values[i];
-            if (padded.length() < static_cast<size_t>(widths[i])) {
-                padded.append(widths[i] - padded.length(), ' ');
+            
+            if (padded.length() > w) {
+                if (w > 3) {
+                    padded = padded.substr(0, w - 3) + "...";
+                } else {
+                    padded = padded.substr(0, w);
+                }
+            } else if (padded.length() < w) {
+                padded.append(w - padded.length(), ' ');
             }
             row += padded;
             

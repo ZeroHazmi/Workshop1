@@ -105,10 +105,12 @@ namespace transaction::rental {
       std::string sqlStart = toMySqlDate(start_date);
       std::string sqlEnd = toMySqlDate(expected_return_date);
 
+      std::string rentalUniqueId = database::DatabaseManager::generateUniqueId("RNT");
+
       std::string rentalQuery = std::format(
-          "INSERT INTO rental (shop_id, cust_id, rental_date, expected_return_date) "
-          "VALUES ({}, {}, '{}', '{}')",
-          shop_id, cust_id, sqlStart, sqlEnd);
+          "INSERT INTO rental (shop_id, cust_id, rental_date, expected_return_date, unique_id) "
+          "VALUES ({}, {}, '{}', '{}', '{}')",
+          shop_id, cust_id, sqlStart, sqlEnd, rentalUniqueId);
 
       auto insertRes = db.executeUpdate(rentalQuery);
       if (!insertRes)
@@ -140,10 +142,12 @@ namespace transaction::rental {
                                detailRes.error());
 
       // 6. Insert into invoices
+      std::string invoiceUniqueId = database::DatabaseManager::generateUniqueId("INV");
+
       std::string invoiceQuery = std::format(
-          "INSERT INTO invoices (rental_id, base_fee, security_deposit, late_fee, total_amount, payment_status) "
-          "VALUES ({}, {:.2f}, {:.2f}, 0.00, {:.2f}, 'Paid')",
-          rental_id, total_fee, deposit, total_due);
+          "INSERT INTO invoices (rental_id, base_fee, security_deposit, late_fee, total_amount, payment_status, unique_id) "
+          "VALUES ({}, {:.2f}, {:.2f}, 0.00, {:.2f}, 'Paid', '{}')",
+          rental_id, total_fee, deposit, total_due, invoiceUniqueId);
       auto invoiceRes = db.executeUpdate(invoiceQuery);
       if (!invoiceRes)
         return std::unexpected("Failed to create invoice: " + invoiceRes.error());
@@ -154,7 +158,7 @@ namespace transaction::rental {
           item_id);
       (void)db.executeUpdate(updateItemQuery);
 
-      return std::format("TX-{:04d}", rental_id);
+      return rentalUniqueId;
     }
 
     std::expected<std::vector<RentalHistoryItem>, std::string> getCustomerRentalHistory(int user_id) {
@@ -163,6 +167,7 @@ namespace transaction::rental {
         std::string query = std::format(
             "SELECT "
             "    r.rental_id, "
+            "    r.unique_id, "
             "    r.rental_date, "
             "    r.expected_return_date, "
             "    COALESCE(DATE_FORMAT(rd.actual_return_date, '%Y-%m-%d'), 'Not Returned') AS actual_return_date, "
@@ -191,6 +196,7 @@ namespace transaction::rental {
         while (rs->next()) {
             RentalHistoryItem item;
             item.rental_id = rs->getInt("rental_id");
+            item.unique_id = rs->getString("unique_id");
             
             std::string rDate = rs->getString("rental_date");
             item.rental_date = fromMySqlDate(rDate);
@@ -301,7 +307,7 @@ namespace transaction::rental {
         auto& db = database::DatabaseManager::getInstance();
         
         std::string query = 
-            "SELECT r.rental_id, cust.fullname AS customer_name, c.name AS item_name, i.size, "
+            "SELECT r.rental_id, r.unique_id, cust.fullname AS customer_name, c.name AS item_name, i.size, "
             "       r.rental_date, r.expected_return_date, c.daily_rate, COALESCE(inv.payment_status, 'Paid') AS payment_status, "
             "       CASE WHEN CURRENT_DATE() > r.expected_return_date THEN 1 ELSE 0 END AS is_overdue "
             "FROM rental r "
@@ -326,6 +332,7 @@ namespace transaction::rental {
         while (rs->next()) {
             ActiveRentalItem item;
             item.rental_id = rs->getInt("rental_id");
+            item.unique_id = rs->getString("unique_id");
             item.customer_name = rs->getString("customer_name");
             item.item_name = rs->getString("item_name");
             item.size = rs->getString("size");
@@ -347,7 +354,7 @@ namespace transaction::rental {
     }
 
     std::expected<std::string, std::string> processCostumeReturn(
-        int rental_id, 
+        const std::string& rental_unique_id, 
         const std::string& actual_return_date, 
         const std::string& condition
     ) {
@@ -355,7 +362,7 @@ namespace transaction::rental {
 
         // 1. Fetch details of the active rental
         std::string selectQuery = std::format(
-            "SELECT r.expected_return_date, r.cust_id, cust.user_id, rd.item_id, "
+            "SELECT r.rental_id, r.unique_id, r.expected_return_date, r.cust_id, cust.user_id, rd.item_id, "
             "       inv.security_deposit, inv.base_fee, c.daily_rate, r.rental_date "
             "FROM rental r "
             "JOIN customers cust ON r.cust_id = cust.cust_id "
@@ -363,8 +370,8 @@ namespace transaction::rental {
             "JOIN apparel_item i ON rd.item_id = i.item_id "
             "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
             "JOIN invoices inv ON r.rental_id = inv.rental_id "
-            "WHERE r.rental_id = {} AND r.is_deleted = 0 AND rd.actual_return_date IS NULL LIMIT 1",
-            rental_id
+            "WHERE (r.unique_id = '{}' OR r.rental_id = '{}') AND r.is_deleted = 0 AND rd.actual_return_date IS NULL LIMIT 1",
+            rental_unique_id, rental_unique_id
         );
 
         auto selectRes = db.executeQuery(selectQuery);
@@ -376,6 +383,8 @@ namespace transaction::rental {
             return std::unexpected("Rental ID either does not exist, has already been returned, or is soft-deleted.");
         }
 
+        int rental_id = rs->getInt("rental_id");
+        std::string actual_rental_unique_id = rs->getString("unique_id");
         std::string expected_return_date = rs->getString("expected_return_date");
         int cust_id = rs->getInt("cust_id");
         int user_id = rs->getInt("user_id");
@@ -529,7 +538,7 @@ namespace transaction::rental {
             "  Total Surcharges    : RM {:.2f}\n"
             "  Deposit Settlement  : {}\n"
             "  Invoice Status      : {}\n",
-            rental_id, base_fee, security_deposit, lateDays, lateFee, damageFee,
+            actual_rental_unique_id, base_fee, security_deposit, lateDays, lateFee, damageFee,
             totalSurcharges, depositSettlementMsg, settlement_status
         );
 
