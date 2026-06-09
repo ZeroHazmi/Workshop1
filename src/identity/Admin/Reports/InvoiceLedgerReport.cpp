@@ -16,8 +16,8 @@ using namespace std;
 namespace identity::adminui::reports {
 
     void showInvoiceLedgerReport(
-        std::vector<int>& activeShopIds, 
-        std::vector<std::string>& activeShopNames
+        vector<int>& activeShopIds, 
+        vector<string>& activeShopNames
     ) {
         bool inLedger = true;
         string statusFilter = "ALL"; // ALL, Paid, Settled, Overdue
@@ -44,17 +44,17 @@ namespace identity::adminui::reports {
             auto& db = database::DatabaseManager::getInstance();
 
             // Count total matching records for pagination
-            std::string countQuery = "SELECT COUNT(*) FROM invoices inv JOIN rental r ON inv.rental_id = r.rental_id WHERE 1=1";
+            string countQuery = "SELECT COUNT(*) FROM invoices inv JOIN rental r ON inv.rental_id = r.rental_id WHERE 1=1";
             if (!activeShopIds.empty()) {
-                std::string shopFilterStr = "";
+                string shopFilterStr = "";
                 for (size_t i = 0; i < activeShopIds.size(); ++i) {
                     shopFilterStr += to_string(activeShopIds[i]);
                     if (i + 1 < activeShopIds.size()) shopFilterStr += ",";
                 }
-                countQuery += std::format(" AND r.shop_id IN ({})", shopFilterStr);
+                countQuery += format(" AND r.shop_id IN ({})", shopFilterStr);
             }
             if (statusFilter != "ALL") {
-                countQuery += std::format(" AND inv.payment_status = '{}'", statusFilter);
+                countQuery += format(" AND inv.payment_status = '{}'", statusFilter);
             }
 
             int totalItems = 0;
@@ -72,13 +72,13 @@ namespace identity::adminui::reports {
             if (currentPage < 1) currentPage = 1;
 
             // Header
-            std::vector<int> colWidths = {12, 12, 18, 9, 9, 9, 9, 18};
+            vector<int> colWidths = {12, 12, 18, 9, 9, 9, 9, 18};
             tool::ui::printRow(colWidths, {"INV ID", "RENTAL ID", "CUSTOMER NAME", "BASE", "DEPOSIT", "LATE FEE", "TOTAL DUE", "STATUS"});
             tool::helper::drawLine(118, '-');
 
             // Fetch records
             int offset = (currentPage - 1) * itemsPerPage;
-            std::string selectQuery = 
+            string selectQuery = 
                 "SELECT inv.unique_id AS inv_uid, r.unique_id AS rnt_uid, cust.fullname AS customer_name, "
                 "       inv.base_fee, inv.security_deposit, inv.late_fee, inv.total_amount, inv.payment_status "
                 "FROM invoices inv "
@@ -87,17 +87,17 @@ namespace identity::adminui::reports {
                 "WHERE 1=1";
 
             if (!activeShopIds.empty()) {
-                std::string shopFilterStr = "";
+                string shopFilterStr = "";
                 for (size_t i = 0; i < activeShopIds.size(); ++i) {
                     shopFilterStr += to_string(activeShopIds[i]);
                     if (i + 1 < activeShopIds.size()) shopFilterStr += ",";
                 }
-                selectQuery += std::format(" AND r.shop_id IN ({})", shopFilterStr);
+                selectQuery += format(" AND r.shop_id IN ({})", shopFilterStr);
             }
             if (statusFilter != "ALL") {
-                selectQuery += std::format(" AND inv.payment_status = '{}'", statusFilter);
+                selectQuery += format(" AND inv.payment_status = '{}'", statusFilter);
             }
-            selectQuery += std::format(" ORDER BY inv.invoice_id DESC LIMIT {} OFFSET {}", itemsPerPage, offset);
+            selectQuery += format(" ORDER BY inv.invoice_id DESC LIMIT {} OFFSET {}", itemsPerPage, offset);
 
             auto selectRes = db.executeQuery(selectQuery);
             if (selectRes) {
@@ -107,7 +107,7 @@ namespace identity::adminui::reports {
                     double dep = rs->getDouble("security_deposit");
                     double late = rs->getDouble("late_fee");
                     double tot = rs->getDouble("total_amount");
-                    std::string status = rs->getString("payment_status");
+                    string status = rs->getString("payment_status");
 
                     tool::ui::printRow(colWidths, {
                         rs->getString("inv_uid"),

@@ -99,10 +99,10 @@ namespace identity::staffui {
             tool::ui::printField("Phone Number", staff.phone_no);
             
             // Query shop name dynamically using shop_id
-            std::string shopName = "Not Assigned";
+            string shopName = "Not Assigned";
             if (staff.shop_id > 0) {
                 auto& db = database::DatabaseManager::getInstance();
-                std::string shopQuery = "SELECT shop_name FROM shops WHERE shop_id = " + to_string(staff.shop_id) + ";";
+                string shopQuery = "SELECT shop_name FROM shops WHERE shop_id = " + to_string(staff.shop_id) + ";";
                 auto shopRes = db.executeQuery(shopQuery);
                 if (shopRes) {
                     sql::ResultSet* srs = shopRes.value();

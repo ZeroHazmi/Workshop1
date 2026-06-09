@@ -18,7 +18,7 @@ using namespace std;
 
 namespace identity::adminui {
 
-    bool isValidDate(const std::string& dateStr) {
+    bool isValidDate(const string& dateStr) {
         if (dateStr.length() != 10) return false;
         if (dateStr[4] != '-' || dateStr[7] != '-') return false;
         for (int i = 0; i < 10; ++i) {
@@ -28,7 +28,7 @@ namespace identity::adminui {
         return true;
     }
 
-    void updateActiveDateRange(transaction::rental::stats::DateRange& activeDateRange, std::string& activeDateRangeLabel) {
+    void updateActiveDateRange(transaction::rental::stats::DateRange& activeDateRange, string& activeDateRangeLabel) {
         println("");
         println("  Select Time Range Option:");
         println("  [1] Last 3 Months");
@@ -45,7 +45,7 @@ namespace identity::adminui {
         auto& db = database::DatabaseManager::getInstance();
         
         if (choice == "1") {
-            std::string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 3 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
+            string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 3 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
             auto result = db.executeQuery(q);
             if (result) {
                 sql::ResultSet* rs = result.value();
@@ -60,7 +60,7 @@ namespace identity::adminui {
                 print("\n  [Error] Failed to calculate dates in database: {}\n", result.error());
             }
         } else if (choice == "2") {
-            std::string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 6 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
+            string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 6 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
             auto result = db.executeQuery(q);
             if (result) {
                 sql::ResultSet* rs = result.value();
@@ -75,7 +75,7 @@ namespace identity::adminui {
                 print("\n  [Error] Failed to calculate dates in database: {}\n", result.error());
             }
         } else if (choice == "3") {
-            std::string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
+            string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 12 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
             auto result = db.executeQuery(q);
             if (result) {
                 sql::ResultSet* rs = result.value();
@@ -126,9 +126,9 @@ namespace identity::adminui {
         this_thread::sleep_for(chrono::milliseconds(1500));
     }
 
-    void updateActiveFilters(std::vector<int>& activeShopIds, std::vector<std::string>& activeShopNames) {
+    void updateActiveFilters(vector<int>& activeShopIds, vector<string>& activeShopNames) {
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = "SELECT shop_id, unique_id, shop_name FROM shops ORDER BY shop_id ASC;";
+        string query = "SELECT shop_id, unique_id, shop_name FROM shops ORDER BY shop_id ASC;";
         auto result = db.executeQuery(query);
         println("");
         if (result) {
@@ -149,11 +149,11 @@ namespace identity::adminui {
         getline(cin, input);
         
         // Parse input
-        std::vector<string> newUniqueIds;
-        std::stringstream ss(input);
-        std::string token;
+        vector<string> newUniqueIds;
+        stringstream ss(input);
+        string token;
         bool hasZero = false;
-        while (std::getline(ss, token, ',')) {
+        while (getline(ss, token, ',')) {
             // Trim token
             token.erase(0, token.find_first_not_of(" \t\r\n"));
             token.erase(token.find_last_not_of(" \t\r\n") + 1);
@@ -171,10 +171,10 @@ namespace identity::adminui {
             println("\n  Filters cleared. Showing all shops.");
         } else {
             // Validate and fetch shop names
-            std::vector<int> validatedIds;
-            std::vector<string> validatedNames;
+            vector<int> validatedIds;
+            vector<string> validatedNames;
             for (const string& uid : newUniqueIds) {
-                std::string checkQuery = "SELECT shop_id, shop_name FROM shops WHERE unique_id = '" + uid + "' OR shop_id = '" + uid + "';";
+                string checkQuery = "SELECT shop_id, shop_name FROM shops WHERE unique_id = '" + uid + "' OR shop_id = '" + uid + "';";
                 auto checkRes = db.executeQuery(checkQuery);
                 if (checkRes) {
                     sql::ResultSet* crs = checkRes.value();
@@ -203,16 +203,16 @@ namespace identity::adminui {
     }
 
     void showBusinessStatsSubmenu(const ::identity::auth::UserSession& session) {
-        std::vector<int> activeShopIds;
-        std::vector<string> activeShopNames;
+        vector<int> activeShopIds;
+        vector<string> activeShopNames;
         
         transaction::rental::stats::DateRange activeDateRange;
-        std::string activeDateRangeLabel = "Last 6 Months";
+        string activeDateRangeLabel = "Last 6 Months";
         
         // Initialize default to Last 6 Months dynamically on first load
         {
             auto& db = database::DatabaseManager::getInstance();
-            std::string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 6 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
+            string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 6 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
             auto result = db.executeQuery(q);
             if (result) {
                 sql::ResultSet* rs = result.value();

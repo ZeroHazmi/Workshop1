@@ -12,8 +12,8 @@ using namespace std;
 namespace identity::adminui::reports {
 
     void showInventoryQualityReport(
-        std::vector<int>& activeShopIds, 
-        std::vector<std::string>& activeShopNames
+        vector<int>& activeShopIds, 
+        vector<string>& activeShopNames
     ) {
         bool inReport = true;
         while (inReport) {
@@ -39,8 +39,8 @@ namespace identity::adminui::reports {
                 auto conditions = auditOpt.value();
                 
                 // Predefine all standard condition statuses in logical order
-                std::vector<std::string> allStatuses = { "Excellent", "Good", "Fair", "Poor", "Damaged" };
-                std::vector<std::pair<std::string, int>> finalConditions;
+                vector<string> allStatuses = { "Excellent", "Good", "Fair", "Poor", "Damaged" };
+                vector<pair<string, int>> finalConditions;
                 
                 // Populate standard statuses
                 for (const auto& status : allStatuses) {

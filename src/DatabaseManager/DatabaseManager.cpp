@@ -50,17 +50,17 @@ expected<int, string> DatabaseManager::executeUpdate(string_view query) {
     }
 }
 
-std::string DatabaseManager::generateUniqueId(string_view prefix) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_int_distribution<> dis(0, 35);
+string DatabaseManager::generateUniqueId(string_view prefix) {
+    static random_device rd;
+    static mt19937 gen(rd());
+    static uniform_int_distribution<> dis(0, 35);
     const char chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
-    std::string suffix;
+    string suffix;
     for (int i = 0; i < 6; ++i) {
         suffix += chars[dis(gen)];
     }
-    return std::format("{}-{}", prefix, suffix);
+    return format("{}-{}", prefix, suffix);
 }
 
 } // namespace database

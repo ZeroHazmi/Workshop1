@@ -36,7 +36,7 @@ namespace identity::adminui {
 
         string uniqueId = database::DatabaseManager::generateUniqueId("SHP");
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = "INSERT INTO shops (shop_name, location, shop_phone, unique_id) VALUES ('" + 
+        string query = "INSERT INTO shops (shop_name, location, shop_phone, unique_id) VALUES ('" + 
                             shopName + "', '" + location + "', '" + phone + "', '" + uniqueId + "');";
         
         auto res = db.executeUpdate(query);
@@ -62,7 +62,7 @@ namespace identity::adminui {
         tool::helper::drawLine(68, '-');
 
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops ORDER BY shop_id ASC;";
+        string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops ORDER BY shop_id ASC;";
         auto result = db.executeQuery(query);
 
         if (!result) {
@@ -101,7 +101,7 @@ namespace identity::adminui {
             }
 
             auto& db = database::DatabaseManager::getInstance();
-            std::string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
+            string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
             auto checkRes = db.executeQuery(query);
             if (!checkRes) {
                 cout << "  [Error] Database error: " << checkRes.error() << "\n";
@@ -150,7 +150,7 @@ namespace identity::adminui {
                     getline(cin, newName);
                     if (newName.empty()) break;
 
-                    std::string updateQuery = "UPDATE shops SET shop_name = '" + newName + "' WHERE shop_id = " + to_string(shopId) + ";";
+                    string updateQuery = "UPDATE shops SET shop_name = '" + newName + "' WHERE shop_id = " + to_string(shopId) + ";";
                     auto res = db.executeUpdate(updateQuery);
                     if (res) {
                         println("  Success: Shop name updated.");
@@ -166,7 +166,7 @@ namespace identity::adminui {
                     getline(cin, newLoc);
                     if (newLoc.empty()) break;
 
-                    std::string updateQuery = "UPDATE shops SET location = '" + newLoc + "' WHERE shop_id = " + to_string(shopId) + ";";
+                    string updateQuery = "UPDATE shops SET location = '" + newLoc + "' WHERE shop_id = " + to_string(shopId) + ";";
                     auto res = db.executeUpdate(updateQuery);
                     if (res) {
                         println("  Success: Location updated.");
@@ -182,7 +182,7 @@ namespace identity::adminui {
                     getline(cin, newPhone);
                     if (newPhone.empty()) break;
 
-                    std::string updateQuery = "UPDATE shops SET shop_phone = '" + newPhone + "' WHERE shop_id = " + to_string(shopId) + ";";
+                    string updateQuery = "UPDATE shops SET shop_phone = '" + newPhone + "' WHERE shop_id = " + to_string(shopId) + ";";
                     auto res = db.executeUpdate(updateQuery);
                     if (res) {
                         println("  Success: Contact phone updated.");
@@ -214,7 +214,7 @@ namespace identity::adminui {
 
         // Verify shop existence first
         auto& db = database::DatabaseManager::getInstance();
-        std::string checkQuery = "SELECT shop_id, unique_id, shop_name FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
+        string checkQuery = "SELECT shop_id, unique_id, shop_name FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
         auto checkRes = db.executeQuery(checkQuery);
         if (!checkRes) {
             cout << "  [Error] Database error: " << checkRes.error() << "\n";
@@ -238,7 +238,7 @@ namespace identity::adminui {
         tool::ui::printRow(colWidths, {"CAT ID", "ITEM NAME", "QUANTITY", "CONDITION"});
         tool::helper::drawLine(65, '-');
 
-        std::string query = 
+        string query = 
             "SELECT c.catalog_id, c.unique_id, c.name, COUNT(i.item_id) AS quantity, i.condition_status "
             "FROM apparel_catalog c "
             "JOIN apparel_item i ON c.catalog_id = i.catalog_id "

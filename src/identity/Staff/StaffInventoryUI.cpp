@@ -20,13 +20,13 @@ namespace identity::staffui {
     static bool displayCatalogItemsHelper(const string& catalogUniqueId, const string& filter = "") {
         auto& db = database::DatabaseManager::getInstance();
         
-        std::string filterClause = "";
+        string filterClause = "";
         if (!filter.empty()) {
-            filterClause = std::format(" AND (name LIKE '%{}%' OR category LIKE '%{}%')", filter, filter);
+            filterClause = format(" AND (name LIKE '%{}%' OR category LIKE '%{}%')", filter, filter);
         }
 
         // Fetch the catalog name to make the header nice (supports ID, exact name, or partial name match, scoped to search results if filter is active)
-        std::string nameQuery = std::format(
+        string nameQuery = format(
             "SELECT catalog_id, name, unique_id FROM apparel_catalog "
             "WHERE (unique_id = '{}' OR catalog_id = '{}' OR name = '{}' OR name LIKE '%{}%'){} AND is_deleted = 0 LIMIT 1",
             catalogUniqueId, catalogUniqueId, catalogUniqueId, catalogUniqueId, filterClause
@@ -37,16 +37,16 @@ namespace identity::staffui {
         sql::ResultSet* nrs = nameRes.value();
         if (!nrs->next()) {
             delete nrs;
-            std::print("  [Error] Catalog ID/Name '{}' not found.\n", catalogUniqueId);
+            print("  [Error] Catalog ID/Name '{}' not found.\n", catalogUniqueId);
             this_thread::sleep_for(chrono::milliseconds(1000));
             return false;
         }
         int catalogId = nrs->getInt("catalog_id");
-        std::string catalogName = nrs->getString("name");
-        std::string catalogUid = nrs->getString("unique_id");
+        string catalogName = nrs->getString("name");
+        string catalogUid = nrs->getString("unique_id");
         delete nrs;
         
-        std::string query = std::format(
+        string query = format(
             "SELECT item_id, unique_id, size, status, condition_status FROM apparel_item "
             "WHERE catalog_id = {} AND is_deleted = 0",
             catalogId
@@ -55,7 +55,7 @@ namespace identity::staffui {
         if (!result) return false;
         
         sql::ResultSet* rs = result.value();
-        std::print("\n  --- PHYSICAL ITEMS FOR CATALOG #{} ({}) ---\n", catalogUid, catalogName);
+        print("\n  --- PHYSICAL ITEMS FOR CATALOG #{} ({}) ---\n", catalogUid, catalogName);
         vector<int> colWidths = {12, 10, 15, 15};
         tool::ui::printRow(colWidths, {"ITEM ID", "SIZE", "STATUS", "CONDITION"});
         tool::helper::drawLine(55, '-');
@@ -74,7 +74,7 @@ namespace identity::staffui {
         tool::helper::drawLine(55, '-');
         
         if (!found) {
-            std::print("  No physical items registered for this catalog.\n");
+            print("  No physical items registered for this catalog.\n");
             this_thread::sleep_for(chrono::milliseconds(1000));
         }
         return found;
@@ -101,7 +101,7 @@ namespace identity::staffui {
                 getline(cin, qText);
 
                 auto& db = database::DatabaseManager::getInstance();
-                std::string catQuery = std::format(
+                string catQuery = format(
                     "SELECT unique_id, name, category, daily_rate FROM apparel_catalog "
                     "WHERE is_deleted = 0 AND (name LIKE '%{}%' OR category LIKE '%{}%') "
                     "ORDER BY catalog_id ASC LIMIT 10",
@@ -123,7 +123,7 @@ namespace identity::staffui {
                             crs->getString("unique_id"),
                             crs->getString("name"),
                             crs->getString("category"),
-                            std::format("RM {:.2f}", crs->getDouble("daily_rate"))
+                            format("RM {:.2f}", crs->getDouble("daily_rate"))
                         });
                     }
                     delete crs;
@@ -152,7 +152,7 @@ namespace identity::staffui {
             }
             
             auto& db = database::DatabaseManager::getInstance();
-            std::string q = std::format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", input, input);
+            string q = format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", input, input);
             auto r = db.executeQuery(q);
             if (r) {
                 sql::ResultSet* rs = r.value();
@@ -192,9 +192,9 @@ namespace identity::staffui {
         if (opt == 6) {
             auto result = inventory::apparel::updateItemStatus(itemId, "Laundry");
             if (result) {
-                std::print("\n  Status for Item #{} successfully updated to 'Laundry'.\n", itemUniqueId);
+                print("\n  Status for Item #{} successfully updated to 'Laundry'.\n", itemUniqueId);
             } else {
-                std::print("\n  Error: {}\n", result.error());
+                print("\n  Error: {}\n", result.error());
             }
         } else {
             string condition = "";
@@ -204,14 +204,14 @@ namespace identity::staffui {
                 case 3: condition = "Fair"; break;
                 case 4: condition = "Poor"; break;
                 case 5: condition = "Damaged"; break;
-                default: std::print("  Invalid option.\n"); return;
+                default: print("  Invalid option.\n"); return;
             }
 
             auto result = inventory::apparel::updateItemCondition(itemId, condition);
             if (result) {
-                std::print("\n  Condition for Item #{} updated to '{}'.\n", itemUniqueId, condition);
+                print("\n  Condition for Item #{} updated to '{}'.\n", itemUniqueId, condition);
             } else {
-                std::print("\n  Error: {}\n", result.error());
+                print("\n  Error: {}\n", result.error());
             }
         }
 
@@ -229,7 +229,7 @@ namespace identity::staffui {
                 tool::ui::showHeader("RETIRE / REMOVE DAMAGED APPAREL", 64);
                 println("");
  
-                std::string listQuery = 
+                string listQuery = 
                     "SELECT i.unique_id, c.name AS item_name, i.size, i.status "
                     "FROM apparel_item i "
                     "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
@@ -239,7 +239,7 @@ namespace identity::staffui {
                 auto listRes = db.executeQuery(listQuery);
                 if (listRes) {
                     sql::ResultSet* rs = listRes.value();
-                    std::vector<std::vector<std::string>> rows;
+                    vector<vector<string>> rows;
                     while (rs->next()) {
                         rows.push_back({
                             rs->getString("unique_id"),
@@ -278,7 +278,7 @@ namespace identity::staffui {
                 string qText;
                 getline(cin, qText);
 
-                std::string catQuery = std::format(
+                string catQuery = format(
                     "SELECT unique_id, name, category, daily_rate FROM apparel_catalog "
                     "WHERE is_deleted = 0 AND (name LIKE '%{}%' OR category LIKE '%{}%') "
                     "ORDER BY catalog_id ASC LIMIT 10",
@@ -300,7 +300,7 @@ namespace identity::staffui {
                             crs->getString("unique_id"),
                             crs->getString("name"),
                             crs->getString("category"),
-                            std::format("RM {:.2f}", crs->getDouble("daily_rate"))
+                            format("RM {:.2f}", crs->getDouble("daily_rate"))
                         });
                     }
                     delete crs;
@@ -328,7 +328,7 @@ namespace identity::staffui {
                 continue;
             }
             
-            std::string q = std::format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", input, input);
+            string q = format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", input, input);
             auto r = db.executeQuery(q);
             if (r) {
                 sql::ResultSet* rs = r.value();
@@ -350,7 +350,7 @@ namespace identity::staffui {
         }
 
         // Fetch details of the item to confirm retirement
-        std::string query = std::format(
+        string query = format(
             "SELECT i.item_id, i.unique_id, c.name, i.size, i.status, i.condition_status "
             "FROM apparel_item i "
             "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
@@ -359,49 +359,49 @@ namespace identity::staffui {
         );
         auto result = db.executeQuery(query);
         if (!result) {
-            std::print("  [Error] Database lookup failed: {}\n", result.error());
+            print("  [Error] Database lookup failed: {}\n", result.error());
             return;
         }
 
         sql::ResultSet* rs = result.value();
         if (!rs->next()) {
             delete rs;
-            std::print("  [Error] Item ID #{} not found or already retired.\n", itemUniqueId);
+            print("  [Error] Item ID #{} not found or already retired.\n", itemUniqueId);
             tool::ui::pressZeroToReturn("previous menu", 64);
             return;
         }
 
-        std::string itemName = rs->getString("name");
-        std::string itemSize = rs->getString("size");
-        std::string itemStatus = rs->getString("status");
-        std::string itemCondition = rs->getString("condition_status");
+        string itemName = rs->getString("name");
+        string itemSize = rs->getString("size");
+        string itemStatus = rs->getString("status");
+        string itemCondition = rs->getString("condition_status");
         delete rs;
 
-        std::print("\n  --- ITEM TO RETIRE ---\n");
-        std::print("  Item ID   : {}\n", itemUniqueId);
-        std::print("  Name      : {}\n", itemName);
-        std::print("  Size      : {}\n", itemSize);
-        std::print("  Status    : {}\n", itemStatus);
-        std::print("  Condition : {}\n", itemCondition);
-        std::print("\n");
+        print("\n  --- ITEM TO RETIRE ---\n");
+        print("  Item ID   : {}\n", itemUniqueId);
+        print("  Name      : {}\n", itemName);
+        print("  Size      : {}\n", itemSize);
+        print("  Status    : {}\n", itemStatus);
+        print("  Condition : {}\n", itemCondition);
+        print("\n");
 
         print("  Are you sure you want to permanently retire this item? (Y/N): ");
         string confirm;
         getline(cin, confirm);
 
         if (confirm == "Y" || confirm == "y") {
-            std::string retireQuery = std::format(
+            string retireQuery = format(
                 "UPDATE apparel_item SET is_deleted = 1, status = 'Retired' WHERE item_id = {}",
                 itemId
             );
             auto retireRes = db.executeUpdate(retireQuery);
             if (retireRes) {
-                std::print("\n  Success: Item #{} has been successfully retired from circulation.\n", itemUniqueId);
+                print("\n  Success: Item #{} has been successfully retired from circulation.\n", itemUniqueId);
             } else {
-                std::print("\n  [Error] Failed to retire item: {}\n", retireRes.error());
+                print("\n  [Error] Failed to retire item: {}\n", retireRes.error());
             }
         } else {
-            std::print("\n  Retirement cancelled.\n");
+            print("\n  Retirement cancelled.\n");
         }
 
         tool::ui::pressZeroToReturn("previous menu", 64);
@@ -412,7 +412,7 @@ namespace identity::staffui {
         println("");
 
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = 
+        string query = 
             "SELECT i.item_id, i.unique_id, c.name AS item_name, i.size, i.condition_status "
             "FROM apparel_item i "
             "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
@@ -427,7 +427,7 @@ namespace identity::staffui {
         }
 
         sql::ResultSet* rs = result.value();
-        std::vector<std::vector<std::string>> rows;
+        vector<vector<string>> rows;
         while (rs->next()) {
             rows.push_back({
                 rs->getString("unique_id"),
@@ -464,7 +464,7 @@ namespace identity::staffui {
         // Resolve item unique ID
         int itemId = -1;
         string itemUniqueId = "";
-        std::string q = std::format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", laundryInput, laundryInput);
+        string q = format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", laundryInput, laundryInput);
         auto r = db.executeQuery(q);
         if (r) {
             sql::ResultSet* rrs = r.value();
@@ -496,7 +496,7 @@ namespace identity::staffui {
         println("");
 
         auto& db = database::DatabaseManager::getInstance();
-        std::string query = 
+        string query = 
             "SELECT i.unique_id, c.name AS item_name, i.size, i.condition_status "
             "FROM apparel_item i "
             "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
@@ -511,7 +511,7 @@ namespace identity::staffui {
         }
 
         sql::ResultSet* rs = result.value();
-        std::vector<std::vector<std::string>> rows;
+        vector<vector<string>> rows;
         while (rs->next()) {
             rows.push_back({
                 rs->getString("unique_id"),

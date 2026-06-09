@@ -12,10 +12,10 @@ using namespace std;
 namespace identity::adminui::reports {
 
     void showBranchPerformanceReport(
-        std::vector<int>& activeShopIds, 
-        std::vector<std::string>& activeShopNames,
+        vector<int>& activeShopIds, 
+        vector<string>& activeShopNames,
         transaction::rental::stats::DateRange& activeDateRange, 
-        std::string& activeDateRangeLabel
+        string& activeDateRangeLabel
     ) {
         bool inReport = true;
         while (inReport) {
@@ -48,7 +48,7 @@ namespace identity::adminui::reports {
                     print("{}\n\n", format("  Total Combined Revenue: RM {:.2f}", totalRevenue));
                     
                     if (totalRevenue > 0.0) {
-                        const std::vector<std::string> barColors = {
+                        const vector<string> barColors = {
                             "\033[96m", // Bright Cyan
                             "\033[95m", // Bright Magenta
                             "\033[93m", // Bright Yellow
@@ -74,7 +74,7 @@ namespace identity::adminui::reports {
                             string color = barColors[cIdx % barColors.size()];
                             cIdx++;
                             
-                            std::print("  {:<20} [ {}{}{}{} ] {:5.1f}% (RM {:.2f})\n", 
+                            print("  {:<20} [ {}{}{}{} ] {:5.1f}% (RM {:.2f})\n", 
                                 pt.shop_name, color, barStr, "\033[0m", remStr, pct, pt.revenue);
                         }
                     } else {

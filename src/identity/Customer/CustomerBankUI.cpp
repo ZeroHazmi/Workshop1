@@ -27,12 +27,12 @@ namespace identity::authui {
                 tool::ui::printField("Bank Name", bank.bank_name);
                 
                 // Mask account number for security: e.g. show only last 4 digits
-                std::string acc = bank.acc_number;
+                string acc = bank.acc_number;
                 if (acc.length() > 4) {
-                    acc = std::string(acc.length() - 4, '*') + acc.substr(acc.length() - 4);
+                    acc = string(acc.length() - 4, '*') + acc.substr(acc.length() - 4);
                 }
                 tool::ui::printField("Account Number", acc);
-                tool::ui::printField("Balance", std::format("RM {:.2f}", bank.balance));
+                tool::ui::printField("Balance", format("RM {:.2f}", bank.balance));
                 
                 println("");
                 tool::helper::drawLine(50, '-');
@@ -98,7 +98,7 @@ namespace identity::authui {
                         tool::ui::displayTitle("LINK BANK ACCOUNT", 50);
                         println("");
                         
-                        std::string bankName, accNum, holder;
+                        string bankName, accNum, holder;
                         print("  Enter Bank Name: ");
                         getline(cin, bankName);
                         print("  Enter Account Number: ");

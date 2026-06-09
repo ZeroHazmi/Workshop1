@@ -7,12 +7,14 @@
 #include <vector>
 #include <expected>
 
+using namespace std;
+
 namespace transaction::rental {
 
-    std::expected<std::vector<RentalHistoryItem>, std::string> getCustomerRentalHistory(int user_id) {
+    expected<vector<RentalHistoryItem>, string> getCustomerRentalHistory(int user_id) {
         auto& db = database::DatabaseManager::getInstance();
         
-        std::string query = std::format(
+        string query = format(
             "SELECT "
             "    r.rental_id, "
             "    r.unique_id, "
@@ -37,22 +39,22 @@ namespace transaction::rental {
         );
         
         auto result = db.executeQuery(query);
-        if (!result) return std::unexpected(result.error());
+        if (!result) return unexpected(result.error());
         
-        std::vector<RentalHistoryItem> history;
+        vector<RentalHistoryItem> history;
         sql::ResultSet* rs = result.value();
         while (rs->next()) {
             RentalHistoryItem item;
             item.rental_id = rs->getInt("rental_id");
             item.unique_id = rs->getString("unique_id");
             
-            std::string rDate = rs->getString("rental_date");
+            string rDate = rs->getString("rental_date");
             item.rental_date = fromMySqlDate(rDate);
             
-            std::string eDate = rs->getString("expected_return_date");
+            string eDate = rs->getString("expected_return_date");
             item.expected_return_date = fromMySqlDate(eDate);
             
-            std::string actDate = rs->getString("actual_return_date");
+            string actDate = rs->getString("actual_return_date");
             item.actual_return_date = fromMySqlDate(actDate);
 
             item.item_name = rs->getString("item_name");
@@ -68,13 +70,13 @@ namespace transaction::rental {
         return history;
     }
 
-    std::expected<BookingStats, std::string> getCustomerBookingStats(int user_id) {
+    expected<BookingStats, string> getCustomerBookingStats(int user_id) {
         auto& db = database::DatabaseManager::getInstance();
         BookingStats stats;
         stats.return_behaviour = {0, 0, 0, 0};
 
         // 1. Query Category Popularity
-        std::string catQuery = std::format(
+        string catQuery = format(
             "SELECT c.category, COUNT(*) AS count "
             "FROM rental r "
             "JOIN rental_details rd ON r.rental_id = rd.rental_id "
@@ -99,7 +101,7 @@ namespace transaction::rental {
         }
 
         // 2. Query Return Behaviour ratios
-        std::string retQuery = std::format(
+        string retQuery = format(
             "SELECT "
             "  COALESCE(SUM(CASE WHEN rd.actual_return_date IS NOT NULL AND rd.actual_return_date <= r.expected_return_date THEN 1 ELSE 0 END), 0) AS on_time_count, "
             "  COALESCE(SUM(CASE WHEN rd.actual_return_date IS NOT NULL AND rd.actual_return_date > r.expected_return_date THEN 1 ELSE 0 END), 0) AS late_count, "
@@ -124,7 +126,7 @@ namespace transaction::rental {
         }
 
         // 3. Query Booking Frequency trends over 6 months
-        std::string trendQuery = std::format(
+        string trendQuery = format(
             "SELECT DATE_FORMAT(r.rental_date, '%b %Y') AS month_name, COUNT(*) AS count "
             "FROM rental r "
             "JOIN customers cust ON r.cust_id = cust.cust_id "
@@ -144,17 +146,17 @@ namespace transaction::rental {
                 });
             }
             // Reverse so months flow chronologically left-to-right (past to present)
-            std::reverse(stats.monthly_trends.begin(), stats.monthly_trends.end());
+            reverse(stats.monthly_trends.begin(), stats.monthly_trends.end());
             delete rs;
         }
 
         return stats;
     }
 
-    std::expected<std::vector<ActiveRentalItem>, std::string> getActiveRentals(const std::string& searchTerm) {
+    expected<vector<ActiveRentalItem>, string> getActiveRentals(const string& searchTerm) {
         auto& db = database::DatabaseManager::getInstance();
         
-        std::string query = 
+        string query = 
             "SELECT r.rental_id, r.unique_id, cust.fullname AS customer_name, c.name AS item_name, i.size, "
             "       r.rental_date, r.expected_return_date, c.daily_rate, COALESCE(inv.payment_status, 'Paid') AS payment_status, "
             "       CASE WHEN CURRENT_DATE() > r.expected_return_date THEN 1 ELSE 0 END AS is_overdue "
@@ -167,15 +169,15 @@ namespace transaction::rental {
             "WHERE rd.actual_return_date IS NULL AND r.is_deleted = 0";
 
         if (!searchTerm.empty()) {
-            query += std::format(" AND (cust.fullname LIKE '%{}%' OR c.name LIKE '%{}%')", searchTerm, searchTerm);
+            query += format(" AND (cust.fullname LIKE '%{}%' OR c.name LIKE '%{}%')", searchTerm, searchTerm);
         }
 
         query += " ORDER BY is_overdue DESC, r.expected_return_date ASC";
 
         auto result = db.executeQuery(query);
-        if (!result) return std::unexpected(result.error());
+        if (!result) return unexpected(result.error());
 
-        std::vector<ActiveRentalItem> items;
+        vector<ActiveRentalItem> items;
         sql::ResultSet* rs = result.value();
         while (rs->next()) {
             ActiveRentalItem item;
@@ -185,10 +187,10 @@ namespace transaction::rental {
             item.item_name = rs->getString("item_name");
             item.size = rs->getString("size");
             
-            std::string rDate = rs->getString("rental_date");
+            string rDate = rs->getString("rental_date");
             item.rental_date = fromMySqlDate(rDate);
             
-            std::string eDate = rs->getString("expected_return_date");
+            string eDate = rs->getString("expected_return_date");
             item.expected_return_date = fromMySqlDate(eDate);
 
             item.daily_rate = rs->getDouble("daily_rate");

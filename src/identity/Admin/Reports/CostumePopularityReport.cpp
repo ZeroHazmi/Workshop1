@@ -12,10 +12,10 @@ using namespace std;
 namespace identity::adminui::reports {
 
     void showCostumePopularityReport(
-        std::vector<int>& activeShopIds, 
-        std::vector<std::string>& activeShopNames,
+        vector<int>& activeShopIds, 
+        vector<string>& activeShopNames,
         transaction::rental::stats::DateRange& activeDateRange, 
-        std::string& activeDateRangeLabel
+        string& activeDateRangeLabel
     ) {
         bool inReport = true;
         while (inReport) {
@@ -58,7 +58,7 @@ namespace identity::adminui::reports {
                     println("");
 
                     int maxBarWidth = 25;
-                    const std::vector<std::string> barColors = {
+                    const vector<string> barColors = {
                         "\033[96m", // Bright Cyan
                         "\033[95m", // Bright Magenta
                         "\033[93m", // Bright Yellow
@@ -82,7 +82,7 @@ namespace identity::adminui::reports {
                         string spaces(maxBarWidth - barWidth, ' ');
                         string color = barColors[cIdx % barColors.size()];
                         cIdx++;
-                        std::print("  {:<{}} | {}{}{} ({} rentals)\n", 
+                        print("  {:<{}} | {}{}{} ({} rentals)\n", 
                                    pt.catalog_name, maxCatalogNameLen, color, unicodeBar + spaces, "\033[0m", pt.rental_count);
                     }
                     println("");

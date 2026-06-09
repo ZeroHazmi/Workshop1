@@ -111,9 +111,9 @@ namespace inventory::ui {
                     session.userid, item.catalog_id, selected_size, start, end, item.daily_rate, total_days
                 );
                 if (txResult) {
-                    std::print("\n  Success: Item successfully rented! Reference Number: {}\n", txResult.value());
+                    print("\n  Success: Item successfully rented! Reference Number: {}\n", txResult.value());
                 } else {
-                    std::print("\n  Error: {}\n", txResult.error());
+                    print("\n  Error: {}\n", txResult.error());
                 }
             } else {
                 println("\n  Rental cancelled.");

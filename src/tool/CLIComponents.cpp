@@ -71,7 +71,7 @@ namespace tool::ui {
         println("  {:<15} : {}", label, priceStr);
     }
 
-    void showHeader(std::string_view title, int width, char decoration) {
+    void showHeader(string_view title, int width, char decoration) {
         tool::helper::clearScreen();
         tool::helper::drawLine(width, decoration);
         displayTitle(title, width);
@@ -83,20 +83,20 @@ namespace tool::ui {
         invalidAttempts++;
         if (invalidAttempts >= maxAttempts) {
             println("\nToo many invalid attempts. Pausing for {} seconds...", pauseSeconds);
-            std::this_thread::sleep_for(std::chrono::seconds(pauseSeconds));
+            this_thread::sleep_for(chrono::seconds(pauseSeconds));
             invalidAttempts = 0;
             return true;
         }
         return false;
     }
 
-    void pressZeroToReturn(std::string_view destination, int width) {
+    void pressZeroToReturn(string_view destination, int width) {
         println("");
         tool::helper::drawLine(width, '-');
-        std::string waitInput;
+        string waitInput;
         do {
             print("\nEnter '0' to return to {}: ", destination);
-            if (!std::getline(std::cin, waitInput)) {
+            if (!getline(cin, waitInput)) {
                 break;
             }
         } while (waitInput != "0");

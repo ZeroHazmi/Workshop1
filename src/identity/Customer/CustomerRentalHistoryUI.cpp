@@ -32,20 +32,20 @@ namespace identity::authui {
         }
 
         // Print header for the table
-        std::vector<int> colWidths = {12, 20, 11, 12, 10, 10};
+        vector<int> colWidths = {12, 20, 11, 12, 10, 10};
         tool::ui::printRow(colWidths, {"ID", "ITEM NAME", "RENTAL DATE", "RETURN DATE", "PAID FEE", "STATUS"});
         tool::helper::drawLine(75, '-');
 
         for (const auto& item : history) {
             double totalPaid = item.base_fee + item.late_fee;
-            std::string actualRet = item.actual_return_date;
+            string actualRet = item.actual_return_date;
             
             tool::ui::printRow(colWidths, {
                 item.unique_id,
                 item.item_name,
                 item.rental_date,
                 actualRet,
-                std::format("RM {:.2f}", totalPaid),
+                format("RM {:.2f}", totalPaid),
                 item.payment_status
             });
         }
@@ -120,7 +120,7 @@ namespace identity::authui {
         }
 
         // Color palette for graphs (12 unique distinct colors)
-        const std::vector<std::string> barColors = {
+        const vector<string> barColors = {
             "\033[96m", // Bright Cyan
             "\033[95m", // Bright Magenta
             "\033[93m", // Bright Yellow
@@ -152,15 +152,15 @@ namespace identity::authui {
         for (const auto& cat : stats.categories) {
             int percentage = (cat.count * 100) / totalRentals;
             int barWidth = maxCount > 0 ? (cat.count * maxBarWidth) / maxCount : 0;
-            std::string bar = "";
+            string bar = "";
             for (int i = 0; i < barWidth; ++i) {
                 bar += "█";
             }
-            std::string spaces = std::string(maxBarWidth - barWidth, ' ');
-            std::string color = barColors[catColorIdx % barColors.size()];
+            string spaces = string(maxBarWidth - barWidth, ' ');
+            string color = barColors[catColorIdx % barColors.size()];
             catColorIdx++;
 
-            std::print("  {:<{}} : [ {}{}{} ] {}% ({} rentals)\n", 
+            print("  {:<{}} : [ {}{}{} ] {}% ({} rentals)\n", 
                        cat.category, maxCategoryLen, color, bar, "\033[0m" + spaces, percentage, cat.count);
         }
         println("");
@@ -176,9 +176,9 @@ namespace identity::authui {
         if (sumReturn > 0) {
             int onTimeBar = (onTimeTotal * 40) / sumReturn; // 40 chars total
             int lateBar = 40 - onTimeBar;
-            std::string onTimeStr = "";
+            string onTimeStr = "";
             for (int i = 0; i < onTimeBar; ++i) onTimeStr += "█";
-            std::string lateStr = "";
+            string lateStr = "";
             for (int i = 0; i < lateBar; ++i) lateStr += "░";
             
             print("  Split Ratio: [ \033[92m{}\033[91m{}\033[0m ]\n", onTimeStr, lateStr);
@@ -204,38 +204,38 @@ namespace identity::authui {
             int maxHeight = 8;
             for (int h = maxHeight; h >= 1; --h) {
                 int threshold = (maxMonthCount * h) / maxHeight;
-                std::print("  {:3d} | ", threshold);
+                print("  {:3d} | ", threshold);
                 size_t mIdx = 0;
                 for (const auto& m : stats.monthly_trends) {
                     string color = barColors[mIdx % barColors.size()];
                     mIdx++;
                     if (m.count >= threshold && m.count > 0) {
-                        std::print("   {}{}{}   ", color, "███", "\033[0m");
+                        print("   {}{}{}   ", color, "███", "\033[0m");
                     } else {
-                        std::print("         ");
+                        print("         ");
                     }
                 }
-                std::print("\n");
+                print("\n");
             }
             
             // X-Axis base line (perfectly aligned directly above month names with no vertical white spaces)
-            std::print("      +");
+            print("      +");
             for (size_t i = 0; i < stats.monthly_trends.size(); ++i) {
-                std::print("---------");
+                print("---------");
             }
-            std::print("\n       ");
+            print("\n       ");
 
             // Month Labels (centered and formatted to 6 characters: Month Yr)
             for (const auto& m : stats.monthly_trends) {
-                std::string displayMonth = m.month_name;
+                string displayMonth = m.month_name;
                 if (displayMonth.length() == 8 && displayMonth[3] == ' ') {
                     displayMonth = displayMonth.substr(0, 3) + " " + displayMonth.substr(6, 2);
                 } else if (displayMonth.length() > 6) {
                     displayMonth = displayMonth.substr(0, 6);
                 }
-                std::print("  {:^6} ", displayMonth);
+                print("  {:^6} ", displayMonth);
             }
-            std::print("\n\n");
+            print("\n\n");
 
             // Print X-axis label centered
             int xLabelWidth = 9 * static_cast<int>(stats.monthly_trends.size());

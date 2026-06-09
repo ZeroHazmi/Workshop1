@@ -1,18 +1,20 @@
 #include "tool/input.h"
 #include <iostream>
 
+using namespace std;
+
 namespace tool::input {
     bool readInt(int& value) {
-        if (std::cin >> value) {
-            std::cin.ignore(1000, '\n');
+        if (cin >> value) {
+            cin.ignore(1000, '\n');
             return true;
         }
-        std::cin.clear();
-        std::cin.ignore(1000, '\n');
+        cin.clear();
+        cin.ignore(1000, '\n');
         return false;
     }
 
-    bool readLine(std::string& value) {
-        return static_cast<bool>(std::getline(std::cin, value));
+    bool readLine(string& value) {
+        return static_cast<bool>(getline(cin, value));
     }
 }

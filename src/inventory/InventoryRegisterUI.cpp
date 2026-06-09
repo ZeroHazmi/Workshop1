@@ -57,7 +57,7 @@ namespace inventory::ui {
             return;
         }
 
-        std::vector<inventory::apparel::ItemBatch> batches;
+        vector<inventory::apparel::ItemBatch> batches;
         bool addingSizes = true;
         
         while (addingSizes) {

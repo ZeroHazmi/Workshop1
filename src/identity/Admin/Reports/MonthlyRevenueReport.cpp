@@ -12,10 +12,10 @@ using namespace std;
 namespace identity::adminui::reports {
 
     void showMonthlyRevenueReport(
-        std::vector<int>& activeShopIds, 
-        std::vector<std::string>& activeShopNames,
+        vector<int>& activeShopIds, 
+        vector<string>& activeShopNames,
         transaction::rental::stats::DateRange& activeDateRange, 
-        std::string& activeDateRangeLabel
+        string& activeDateRangeLabel
     ) {
         bool inReport = true;
         while (inReport) {
@@ -51,7 +51,7 @@ namespace identity::adminui::reports {
                     // Print vertical bar chart
                     println("  Total (RM)");
                     int maxRows = 10;
-                    const std::vector<std::string> barColors = {
+                    const vector<string> barColors = {
                         "\033[96m", // Bright Cyan
                         "\033[95m", // Bright Magenta
                         "\033[93m", // Bright Yellow
@@ -67,34 +67,34 @@ namespace identity::adminui::reports {
                     };
                     for (int r = maxRows; r >= 1; --r) {
                         double threshold = maxRev * (r / (double)maxRows);
-                        std::print("  {:9.2f} | ", threshold);
+                        print("  {:9.2f} | ", threshold);
                         size_t cIdx = 0;
                         for (const auto& pt : trends) {
-                            std::string color = barColors[cIdx % barColors.size()];
+                            string color = barColors[cIdx % barColors.size()];
                             cIdx++;
                             if (pt.revenue >= threshold && pt.revenue > 0.0) {
-                                std::print("   {}{}{}   ", color, "███", "\033[0m");
+                                print("   {}{}{}   ", color, "███", "\033[0m");
                             } else {
-                                std::print("         ");
+                                print("         ");
                             }
                         }
-                        std::print("\n");
+                        print("\n");
                     }
 
                     // Chart base line
-                    std::print("            +");
+                    print("            +");
                     for (size_t i = 0; i < trends.size(); ++i) {
-                        std::print("---------");
+                        print("---------");
                     }
-                    std::print("\n             ");
+                    print("\n             ");
 
                     // X-axis month labels formatted to exactly 6 characters (e.g., "May 26") and centered
                     for (const auto& pt : trends) {
-                        std::string displayMonth = pt.month_name;
+                        string displayMonth = pt.month_name;
                         if (displayMonth.length() == 8 && displayMonth[3] == ' ') {
                             displayMonth = displayMonth.substr(0, 3) + " " + displayMonth.substr(6, 2);
                         }
-                        std::print("  {:^6} ", displayMonth);
+                        print("  {:^6} ", displayMonth);
                     }
                     print("\n\n");
 
