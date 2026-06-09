@@ -15,11 +15,15 @@
 #include <thread>
 #include <vector>
 
+namespace auth = ::identity::auth;
+namespace apparel = ::inventory::apparel;
+namespace rental = ::transaction::rental;
+
 using namespace std;
 
 namespace inventory::ui {
 
-    bool processRentalCheckout(const ::identity::auth::UserSession& session, const inventory::apparel::ApparelCatalog& item, int catalog_id) {
+    bool processRentalCheckout(const auth::UserSession& session, const apparel::ApparelCatalog& item, int catalog_id) {
         bool renting = true;
         while (renting) {
             tool::ui::showHeader("RENT ITEM", 65);
@@ -31,7 +35,7 @@ namespace inventory::ui {
             tool::input::readLine(selected_size);
             
             bool sizeAvailable = false;
-            auto currentSizesOpt = inventory::apparel::getAvailableSizes(catalog_id);
+            auto currentSizesOpt = apparel::getAvailableSizes(catalog_id);
             if (currentSizesOpt) {
                 for (const auto& [size, qty] : currentSizesOpt.value()) {
                     if (size == selected_size && qty > 0) {
@@ -107,7 +111,7 @@ namespace inventory::ui {
             tool::input::readLine(confirm);
 
             if (confirm == "Y" || confirm == "y") {
-                auto txResult = transaction::rental::createRental(
+                auto txResult = rental::createRental(
                     session.userid, item.catalog_id, selected_size, start, end, item.daily_rate, total_days
                 );
                 if (txResult) {

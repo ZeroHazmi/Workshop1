@@ -8,6 +8,8 @@
 #include <iostream>
 #include <thread>
 
+namespace auth = ::identity::auth;
+
 using namespace std;
 
 namespace identity::authui {
@@ -32,7 +34,7 @@ namespace identity::authui {
         // tool::helper::clearScreen();
     }
 
-    void showCustomerDashboard(const ::identity::auth::UserSession& session) {
+    void showCustomerDashboard(const auth::UserSession& session) {
         tool::helper::clearScreen();
         
         // Header with double-line borders
@@ -56,7 +58,7 @@ namespace identity::authui {
         print("  Select an option: ");
     }
 
-    void handleCustomerDashboard(const ::identity::auth::UserSession& session) {
+    void handleCustomerDashboard(const auth::UserSession& session) {
         bool inDashboard = true;
         int invalidAttempts = 0;
         while (inDashboard) {

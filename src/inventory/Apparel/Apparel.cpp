@@ -3,14 +3,16 @@
 #include <format>
 #include <iostream>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace inventory::apparel {
 
     expected<void, string> addApparelCatalog(const ApparelCatalog& catalog, const vector<ItemBatch>& batches) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
-        string catalogUniqueId = database::DatabaseManager::generateUniqueId("CAT");
+        string catalogUniqueId = db::DatabaseManager::generateUniqueId("CAT");
 
         string catalog_query = format(
             "INSERT INTO apparel_catalog (shop_id, name, description, category, colour, daily_rate, unique_id) "
@@ -35,7 +37,7 @@ namespace inventory::apparel {
 
         for (const auto& batch : batches) {
             for (int i = 0; i < batch.quantity; ++i) {
-                string itemUniqueId = database::DatabaseManager::generateUniqueId("ITM");
+                string itemUniqueId = db::DatabaseManager::generateUniqueId("ITM");
                 string item_query = format(
                     "INSERT INTO apparel_item (catalog_id, size, status, condition_status, unique_id) "
                     "VALUES ({}, '{}', 'Available', '{}', '{}')",
@@ -52,7 +54,7 @@ namespace inventory::apparel {
     }
 
     expected<int, string> getTotalApparelsCount(string_view searchTerm) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
         string query = "SELECT COUNT(*) AS total FROM apparel_catalog WHERE is_deleted = 0";
         if (!searchTerm.empty()) {
@@ -72,7 +74,7 @@ namespace inventory::apparel {
     }
 
     expected<vector<CatalogDisplayItem>, string> getCatalogDisplay(int limit, int offset, string_view searchTerm) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
         string query = 
             "SELECT c.catalog_id, c.unique_id, c.shop_id, c.name, c.category, c.daily_rate, "
@@ -106,7 +108,7 @@ namespace inventory::apparel {
     }
 
     expected<ApparelCatalog, string> getApparelById(int catalog_id) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "SELECT catalog_id, unique_id, shop_id, name, description, category, colour, daily_rate "
             "FROM apparel_catalog WHERE catalog_id = {} AND is_deleted = 0", catalog_id
@@ -134,7 +136,7 @@ namespace inventory::apparel {
     }
 
     expected<ApparelCatalog, string> getApparelByUniqueId(string_view unique_id) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "SELECT catalog_id, unique_id, shop_id, name, description, category, colour, daily_rate "
             "FROM apparel_catalog WHERE (unique_id = '{}' OR catalog_id = '{}') AND is_deleted = 0",
@@ -163,7 +165,7 @@ namespace inventory::apparel {
     }
 
     expected<vector<pair<string, int>>, string> getAvailableSizes(int catalog_id) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "SELECT size, COUNT(*) as qty FROM apparel_item "
             "WHERE catalog_id = {} AND status = 'Available' AND is_deleted = 0 "
@@ -183,7 +185,7 @@ namespace inventory::apparel {
     }
 
     expected<vector<ApparelItem>, string> getItemsByStatus(string_view status) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "SELECT item_id, unique_id, catalog_id, size, status, condition_status FROM apparel_item "
             "WHERE status = '{}' AND is_deleted = 0",
@@ -210,7 +212,7 @@ namespace inventory::apparel {
     }
 
     expected<void, string> updateItemCondition(int item_id, string_view condition) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "UPDATE apparel_item SET condition_status = '{}' WHERE item_id = {} AND is_deleted = 0",
             condition, item_id
@@ -221,7 +223,7 @@ namespace inventory::apparel {
     }
 
     expected<void, string> updateItemStatus(int item_id, string_view status) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "UPDATE apparel_item SET status = '{}' WHERE item_id = {} AND is_deleted = 0",
             status, item_id

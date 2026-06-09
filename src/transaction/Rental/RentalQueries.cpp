@@ -7,12 +7,14 @@
 #include <vector>
 #include <expected>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace transaction::rental {
 
     expected<vector<RentalHistoryItem>, string> getCustomerRentalHistory(int user_id) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
         string query = format(
             "SELECT "
@@ -71,7 +73,7 @@ namespace transaction::rental {
     }
 
     expected<BookingStats, string> getCustomerBookingStats(int user_id) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         BookingStats stats;
         stats.return_behaviour = {0, 0, 0, 0};
 
@@ -154,7 +156,7 @@ namespace transaction::rental {
     }
 
     expected<vector<ActiveRentalItem>, string> getActiveRentals(const string& searchTerm) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
         string query = 
             "SELECT r.rental_id, r.unique_id, cust.fullname AS customer_name, c.name AS item_name, i.size, "

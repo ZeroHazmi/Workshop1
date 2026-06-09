@@ -10,14 +10,17 @@
 #include <vector>
 #include <thread>
 
+namespace auth = ::identity::auth;
+namespace rental = ::transaction::rental;
+
 using namespace std;
 
 namespace identity::authui {
 
-    void viewRentalHistory(const ::identity::auth::UserSession& session) {
+    void viewRentalHistory(const auth::UserSession& session) {
         tool::ui::showHeader("RENTAL HISTORY", 75);
 
-        auto historyResult = ::transaction::rental::getCustomerRentalHistory(session.userid);
+        auto historyResult = rental::getCustomerRentalHistory(session.userid);
         if (!historyResult) {
             println("  Error: {}", historyResult.error());
             tool::ui::pressZeroToReturn("dashboard", 75);
@@ -53,7 +56,7 @@ namespace identity::authui {
         tool::ui::pressZeroToReturn("dashboard", 75);
     }
 
-    void handleRentalHistoryMenu(const ::identity::auth::UserSession& session) {
+    void handleRentalHistoryMenu(const auth::UserSession& session) {
         bool inSubMenu = true;
         int invalidAttempts = 0;
         while (inSubMenu) {
@@ -95,10 +98,10 @@ namespace identity::authui {
         }
     }
 
-    void viewBookingBehaviour(const ::identity::auth::UserSession& session) {
+    void viewBookingBehaviour(const auth::UserSession& session) {
         tool::ui::showHeader("BOOKING BEHAVIOUR & INSIGHTS", 60);
 
-        auto statsRes = ::transaction::rental::getCustomerBookingStats(session.userid);
+        auto statsRes = rental::getCustomerBookingStats(session.userid);
         if (!statsRes) {
             println("  Error retrieving statistics: {}", statsRes.error());
             tool::ui::pressZeroToReturn("previous menu", 60);

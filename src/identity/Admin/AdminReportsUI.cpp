@@ -14,6 +14,10 @@
 #include <sstream>
 #include <vector>
 
+namespace stats = ::transaction::rental::stats;
+namespace db = ::database;
+namespace auth = ::identity::auth;
+
 using namespace std;
 
 namespace identity::adminui {
@@ -28,7 +32,7 @@ namespace identity::adminui {
         return true;
     }
 
-    void updateActiveDateRange(transaction::rental::stats::DateRange& activeDateRange, string& activeDateRangeLabel) {
+    void updateActiveDateRange(stats::DateRange& activeDateRange, string& activeDateRangeLabel) {
         println("");
         println("  Select Time Range Option:");
         println("  [1] Last 3 Months");
@@ -42,7 +46,7 @@ namespace identity::adminui {
         string choice;
         getline(cin, choice);
         
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
         if (choice == "1") {
             string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 3 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
@@ -127,7 +131,7 @@ namespace identity::adminui {
     }
 
     void updateActiveFilters(vector<int>& activeShopIds, vector<string>& activeShopNames) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = "SELECT shop_id, unique_id, shop_name FROM shops ORDER BY shop_id ASC;";
         auto result = db.executeQuery(query);
         println("");
@@ -202,16 +206,16 @@ namespace identity::adminui {
         this_thread::sleep_for(chrono::milliseconds(1500));
     }
 
-    void showBusinessStatsSubmenu(const ::identity::auth::UserSession& session) {
+    void showBusinessStatsSubmenu(const auth::UserSession& session) {
         vector<int> activeShopIds;
         vector<string> activeShopNames;
         
-        transaction::rental::stats::DateRange activeDateRange;
+        stats::DateRange activeDateRange;
         string activeDateRangeLabel = "Last 6 Months";
         
         // Initialize default to Last 6 Months dynamically on first load
         {
-            auto& db = database::DatabaseManager::getInstance();
+            auto& db = db::DatabaseManager::getInstance();
             string q = "SELECT DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 6 MONTH), '%Y-%m-%d') AS start, DATE_FORMAT(NOW(), '%Y-%m-%d') AS end;";
             auto result = db.executeQuery(q);
             if (result) {

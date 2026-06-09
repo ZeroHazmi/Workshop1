@@ -13,12 +13,16 @@
 #include <thread>
 #include <format>
 
+namespace db = ::database;
+namespace apparel = ::inventory::apparel;
+namespace auth = ::identity::auth;
+
 using namespace std;
 
 namespace identity::staffui {
 
     static bool displayCatalogItemsHelper(const string& catalogUniqueId, const string& filter = "") {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
         string filterClause = "";
         if (!filter.empty()) {
@@ -100,7 +104,7 @@ namespace identity::staffui {
                 string qText;
                 getline(cin, qText);
 
-                auto& db = database::DatabaseManager::getInstance();
+                auto& db = db::DatabaseManager::getInstance();
                 string catQuery = format(
                     "SELECT unique_id, name, category, daily_rate FROM apparel_catalog "
                     "WHERE is_deleted = 0 AND (name LIKE '%{}%' OR category LIKE '%{}%') "
@@ -151,7 +155,7 @@ namespace identity::staffui {
                 continue;
             }
             
-            auto& db = database::DatabaseManager::getInstance();
+            auto& db = db::DatabaseManager::getInstance();
             string q = format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", input, input);
             auto r = db.executeQuery(q);
             if (r) {
@@ -190,7 +194,7 @@ namespace identity::staffui {
         cin.ignore(1000, '\n');
 
         if (opt == 6) {
-            auto result = inventory::apparel::updateItemStatus(itemId, "Laundry");
+            auto result = apparel::updateItemStatus(itemId, "Laundry");
             if (result) {
                 print("\n  Status for Item #{} successfully updated to 'Laundry'.\n", itemUniqueId);
             } else {
@@ -207,7 +211,7 @@ namespace identity::staffui {
                 default: print("  Invalid option.\n"); return;
             }
 
-            auto result = inventory::apparel::updateItemCondition(itemId, condition);
+            auto result = apparel::updateItemCondition(itemId, condition);
             if (result) {
                 print("\n  Condition for Item #{} updated to '{}'.\n", itemUniqueId, condition);
             } else {
@@ -222,7 +226,7 @@ namespace identity::staffui {
         int itemId = -1;
         string itemUniqueId = "";
         bool firstLoad = true;
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         
         while (true) {
             if (firstLoad) {
@@ -411,7 +415,7 @@ namespace identity::staffui {
         tool::ui::showHeader("PROCESS LAUNDRY", 64);
         println("");
 
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = 
             "SELECT i.item_id, i.unique_id, c.name AS item_name, i.size, i.condition_status "
             "FROM apparel_item i "
@@ -481,7 +485,7 @@ namespace identity::staffui {
             return;
         }
 
-        auto updateRes = inventory::apparel::updateItemStatus(itemId, "Available");
+        auto updateRes = apparel::updateItemStatus(itemId, "Available");
         if (updateRes) {
             println("\n  Item #{} marked as Available.", itemUniqueId);
         } else {
@@ -495,7 +499,7 @@ namespace identity::staffui {
         tool::ui::showHeader("RETIRED / WRITTEN-OFF ITEMS", 64);
         println("");
 
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = 
             "SELECT i.unique_id, c.name AS item_name, i.size, i.condition_status "
             "FROM apparel_item i "
@@ -541,7 +545,7 @@ namespace identity::staffui {
         tool::ui::pressZeroToReturn("previous menu", 64);
     }
 
-    void manageApparelInventory(const ::identity::auth::UserSession& session) {
+    void manageApparelInventory(const auth::UserSession& session) {
         bool inInventoryMenu = true;
         int invalidAttempts = 0;
         while (inInventoryMenu) {

@@ -19,6 +19,12 @@
 #include "tool/CLIComponents.h"
 #include "tool/input.h"
 
+namespace db = ::database;
+namespace auth = ::identity::auth;
+namespace authui = ::identity::authui;
+namespace adminui = ::identity::adminui;
+namespace staffui = ::identity::staffui;
+
 using namespace std;
 
 int main() {
@@ -27,16 +33,16 @@ int main() {
     SetConsoleCP(CP_UTF8);
 #endif
 
-    if (!database::DatabaseManager::getInstance().connect()) {
+    if (!db::DatabaseManager::getInstance().connect()) {
         println(stderr, "Application failed to start: Database connection error.");
         return 1;
     }
 
 // 2. Instantiate Auth Service
-    ::identity::auth::Auth authService;
+    auth::Auth authService;
     
     // Formal Landing Screen
-    ::identity::authui::showSplashScreen();
+    authui::showSplashScreen();
 
     int invalidAttempts = 0;
     bool systemRunning = true;
@@ -53,7 +59,7 @@ int main() {
             println("  Invalid selection.");
             if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                 tool::helper::clearScreen();
-                ::identity::authui::showSplashScreen();
+                authui::showSplashScreen();
             } else {
                 this_thread::sleep_for(chrono::milliseconds(1000));
             }
@@ -72,16 +78,16 @@ int main() {
                     string role = session.roles.front();
                     
                     if (role == "admin") {
-                        ::identity::adminui::handleAdminDashboard(session);
+                        adminui::handleAdminDashboard(session);
                     } else if (role == "staff") {
-                        ::identity::staffui::handleStaffDashboard(session);
+                        staffui::handleStaffDashboard(session);
                     } else {
                         // Default to customer dashboard
-                        ::identity::authui::handleCustomerDashboard(session);
+                        authui::handleCustomerDashboard(session);
                     }
                 } else {
                     tool::helper::clearScreen();
-                    ::identity::authui::showSplashScreen();
+                    authui::showSplashScreen();
                 }
                 break;
             }
@@ -100,7 +106,7 @@ int main() {
                 println("  Invalid selection.");
                 if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     tool::helper::clearScreen();
-                    ::identity::authui::showSplashScreen();
+                    authui::showSplashScreen();
                 } else {
                     this_thread::sleep_for(chrono::milliseconds(1000));
                 }
@@ -108,4 +114,3 @@ int main() {
     }
     return 0;
 }
-

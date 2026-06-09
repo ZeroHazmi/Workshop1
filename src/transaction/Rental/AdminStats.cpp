@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <iostream>
 
+namespace db = ::database;
+namespace rental = ::transaction::rental;
+
 using namespace std;
 
 namespace transaction::rental::stats {
@@ -38,7 +41,7 @@ namespace transaction::rental::stats {
         const vector<int>& shopIds, 
         const DateRange& dateRange
     ) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         vector<RevenueTrendPoint> trends;
 
         string shopFilter = "";
@@ -88,7 +91,7 @@ namespace transaction::rental::stats {
         const vector<int>& shopIds, 
         const DateRange& dateRange
     ) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         vector<CostumePopularityPoint> points;
 
         string shopFilter = "";
@@ -129,7 +132,7 @@ namespace transaction::rental::stats {
         const vector<int>& shopIds, 
         const DateRange& dateRange
     ) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         vector<BranchPerformancePoint> points;
 
         string shopFilter = "";
@@ -182,7 +185,7 @@ namespace transaction::rental::stats {
     expected<vector<InventoryConditionPoint>, string> getInventoryConditionAudit(
         const vector<int>& shopIds
     ) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         vector<InventoryConditionPoint> points;
 
         string query;
@@ -220,4 +223,4 @@ namespace transaction::rental::stats {
         return points;
     }
 
-} // namespace transaction::rental::stats
+} // namespace rental::stats

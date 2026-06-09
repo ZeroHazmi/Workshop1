@@ -7,6 +7,8 @@
 #include <format>
 #include <vector>
 
+namespace stats = ::transaction::rental::stats;
+
 using namespace std;
 
 namespace identity::adminui::reports {
@@ -14,7 +16,7 @@ namespace identity::adminui::reports {
     void showCostumePopularityReport(
         vector<int>& activeShopIds, 
         vector<string>& activeShopNames,
-        transaction::rental::stats::DateRange& activeDateRange, 
+        stats::DateRange& activeDateRange, 
         string& activeDateRangeLabel
     ) {
         bool inReport = true;
@@ -34,7 +36,7 @@ namespace identity::adminui::reports {
             print(" | Time Range: {}\n", activeDateRangeLabel);
             println("");
 
-            auto popOpt = transaction::rental::stats::getCostumePopularity(activeShopIds, activeDateRange);
+            auto popOpt = stats::getCostumePopularity(activeShopIds, activeDateRange);
             if (!popOpt) {
                 print("{}\n", format("  Error retrieving costume popularity: {}", popOpt.error()));
             } else {

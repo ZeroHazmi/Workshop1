@@ -9,17 +9,20 @@
 #include <iostream>
 #include <thread>
 
+namespace auth = ::identity::auth;
+namespace profile = ::identity::profile;
+
 using namespace std;
 
 namespace identity::authui {
 
-    void manageBankAccount(const ::identity::auth::UserSession& session) {
+    void manageBankAccount(const auth::UserSession& session) {
         bool inBankMenu = true;
         int invalidAttempts = 0;
         while (inBankMenu) {
             tool::ui::showHeader("BANK ACCOUNT DETAILS", 64);
             
-            auto bankOpt = ::identity::profile::Profile::getBankAccount(session.userid);
+            auto bankOpt = profile::Profile::getBankAccount(session.userid);
             if (bankOpt) {
                 auto& bank = bankOpt.value();
                 tool::ui::printField("Account ID", bank.unique_id);
@@ -48,7 +51,7 @@ namespace identity::authui {
                         double amount;
                         if (cin >> amount && amount > 0) {
                             cin.ignore(1000, '\n');
-                            auto depositRes = ::identity::profile::Profile::depositBalance(bank.acc_id, amount);
+                            auto depositRes = profile::Profile::depositBalance(bank.acc_id, amount);
                             if (depositRes) {
                                 println("\n  Successfully deposited RM {:.2f} to your account!", amount);
                             } else {
@@ -62,7 +65,7 @@ namespace identity::authui {
                         tool::ui::pressZeroToReturn("bank menu", 64);
                     } else if (option == 2) {
                         invalidAttempts = 0;
-                        auto removeRes = ::identity::profile::Profile::removeBankAccount(bank.acc_id);
+                        auto removeRes = profile::Profile::removeBankAccount(bank.acc_id);
                         if (removeRes) {
                             println("\n  Bank account successfully unlinked.");
                         } else {
@@ -106,7 +109,7 @@ namespace identity::authui {
                         print("  Enter Account Holder Name: ");
                         getline(cin, holder);
                         
-                        auto linkResult = ::identity::profile::Profile::linkBankAccount(session.userid, bankName, accNum, holder);
+                        auto linkResult = profile::Profile::linkBankAccount(session.userid, bankName, accNum, holder);
                         if (linkResult) {
                             println("\n  Bank account linked successfully!");
                         } else {

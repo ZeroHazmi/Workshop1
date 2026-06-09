@@ -11,6 +11,9 @@
 #include <format>
 #include <vector>
 
+namespace db = ::database;
+namespace auth = ::identity::auth;
+
 using namespace std;
 
 namespace identity::adminui {
@@ -34,8 +37,8 @@ namespace identity::adminui {
             return;
         }
 
-        string uniqueId = database::DatabaseManager::generateUniqueId("SHP");
-        auto& db = database::DatabaseManager::getInstance();
+        string uniqueId = db::DatabaseManager::generateUniqueId("SHP");
+        auto& db = db::DatabaseManager::getInstance();
         string query = "INSERT INTO shops (shop_name, location, shop_phone, unique_id) VALUES ('" + 
                             shopName + "', '" + location + "', '" + phone + "', '" + uniqueId + "');";
         
@@ -61,7 +64,7 @@ namespace identity::adminui {
         tool::ui::printRow(colWidths, {"ID", "SHOP NAME", "LOCATION", "CONTACT PHONE"});
         tool::helper::drawLine(68, '-');
 
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops ORDER BY shop_id ASC;";
         auto result = db.executeQuery(query);
 
@@ -100,7 +103,7 @@ namespace identity::adminui {
                 return;
             }
 
-            auto& db = database::DatabaseManager::getInstance();
+            auto& db = db::DatabaseManager::getInstance();
             string query = "SELECT shop_id, unique_id, shop_name, location, shop_phone FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
             auto checkRes = db.executeQuery(query);
             if (!checkRes) {
@@ -213,7 +216,7 @@ namespace identity::adminui {
         }
 
         // Verify shop existence first
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string checkQuery = "SELECT shop_id, unique_id, shop_name FROM shops WHERE unique_id = '" + shopIdInput + "' OR shop_id = '" + shopIdInput + "';";
         auto checkRes = db.executeQuery(checkQuery);
         if (!checkRes) {
@@ -270,7 +273,7 @@ namespace identity::adminui {
         tool::ui::pressZeroToReturn("dashboard", 65);
     }
 
-    void showShopManagementSubmenu(const ::identity::auth::UserSession& session) {
+    void showShopManagementSubmenu(const auth::UserSession& session) {
         bool inSubmenu = true;
         int invalidAttempts = 0;
         while (inSubmenu) {

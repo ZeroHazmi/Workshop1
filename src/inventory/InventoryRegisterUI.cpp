@@ -12,14 +12,18 @@
 #include <string>
 #include <vector>
 
+namespace auth = ::identity::auth;
+namespace profile = ::identity::profile;
+namespace apparel = ::inventory::apparel;
+
 using namespace std;
 
 namespace inventory::ui {
 
-    void registerNewApparel(const ::identity::auth::UserSession& session) {
+    void registerNewApparel(const auth::UserSession& session) {
         tool::ui::showHeader("REGISTER NEW APPAREL", 64);
 
-        auto staffProfileOpt = ::identity::profile::Profile::getStaffProfile(session.userid);
+        auto staffProfileOpt = profile::Profile::getStaffProfile(session.userid);
         if (!staffProfileOpt) {
             println("  Error: Could not retrieve staff profile.");
             tool::ui::pressZeroToReturn("dashboard", 64);
@@ -57,7 +61,7 @@ namespace inventory::ui {
             return;
         }
 
-        vector<inventory::apparel::ItemBatch> batches;
+        vector<apparel::ItemBatch> batches;
         bool addingSizes = true;
         
         while (addingSizes) {
@@ -106,7 +110,7 @@ namespace inventory::ui {
             return;
         }
 
-        inventory::apparel::ApparelCatalog newCatalog;
+        apparel::ApparelCatalog newCatalog;
         newCatalog.shop_id = shop_id;
         newCatalog.name = apparelName;
         newCatalog.description = description;
@@ -114,7 +118,7 @@ namespace inventory::ui {
         newCatalog.colour = colour;
         newCatalog.daily_rate = rentalPrice;
 
-        auto result = inventory::apparel::addApparelCatalog(newCatalog, batches);
+        auto result = apparel::addApparelCatalog(newCatalog, batches);
         if (result) {
             int totalQty = 0;
             for (const auto& b : batches) totalQty += b.quantity;

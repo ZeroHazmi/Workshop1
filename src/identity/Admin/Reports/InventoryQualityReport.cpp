@@ -7,6 +7,8 @@
 #include <format>
 #include <vector>
 
+namespace stats = ::transaction::rental::stats;
+
 using namespace std;
 
 namespace identity::adminui::reports {
@@ -32,7 +34,7 @@ namespace identity::adminui::reports {
             print(" | Time Range: N/A (Current Physical State)\n");
             println("");
 
-            auto auditOpt = transaction::rental::stats::getInventoryConditionAudit(activeShopIds);
+            auto auditOpt = stats::getInventoryConditionAudit(activeShopIds);
             if (!auditOpt) {
                 print("{}\n", format("  Error retrieving inventory audit: {}", auditOpt.error()));
             } else {

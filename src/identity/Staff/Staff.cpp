@@ -2,6 +2,8 @@
 #include "DatabaseManager/DatabaseManager.h"
 #include <print>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::staff {
@@ -30,7 +32,7 @@ namespace identity::staff {
             string(position) + "', '" +
             string(phone) + "');";
 
-        auto staffResult = database::DatabaseManager::getInstance().executeUpdate(staffQuery);
+        auto staffResult = db::DatabaseManager::getInstance().executeUpdate(staffQuery);
 
         if (staffResult) {
             return userId;

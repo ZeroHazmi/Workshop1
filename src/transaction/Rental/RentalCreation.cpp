@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <expected>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace transaction::rental {
@@ -14,7 +16,7 @@ namespace transaction::rental {
         int user_id, int catalog_id, const string &size,
         const string &start_date, const string &expected_return_date,
         double daily_rate, int total_days) {
-      auto &db = database::DatabaseManager::getInstance();
+      auto &db = db::DatabaseManager::getInstance();
 
       // 1. Get cust_id from user_id
       string custQuery = format(
@@ -96,7 +98,7 @@ namespace transaction::rental {
       string sqlStart = toMySqlDate(start_date);
       string sqlEnd = toMySqlDate(expected_return_date);
 
-      string rentalUniqueId = database::DatabaseManager::generateUniqueId("RNT");
+      string rentalUniqueId = db::DatabaseManager::generateUniqueId("RNT");
 
       string rentalQuery = format(
           "INSERT INTO rental (shop_id, cust_id, rental_date, expected_return_date, unique_id) "
@@ -133,7 +135,7 @@ namespace transaction::rental {
                                detailRes.error());
 
       // 6. Insert into invoices
-      string invoiceUniqueId = database::DatabaseManager::generateUniqueId("INV");
+      string invoiceUniqueId = db::DatabaseManager::generateUniqueId("INV");
 
       string invoiceQuery = format(
           "INSERT INTO invoices (rental_id, base_fee, security_deposit, late_fee, total_amount, payment_status, unique_id) "

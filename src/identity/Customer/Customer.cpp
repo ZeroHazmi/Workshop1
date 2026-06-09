@@ -2,6 +2,8 @@
 #include "DatabaseManager/DatabaseManager.h"
 #include <print>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::customer {
@@ -16,7 +18,7 @@ namespace identity::customer {
             return unexpected("Full name is required for customer profile.");
         }
 
-        string uniqueId = database::DatabaseManager::generateUniqueId("CST");
+        string uniqueId = db::DatabaseManager::generateUniqueId("CST");
 
         // Insert corresponding CUSTOMER record
         string customerQuery =
@@ -27,7 +29,7 @@ namespace identity::customer {
             string(phone) + "', '" +
             uniqueId + "');";
 
-        auto customerResult = database::DatabaseManager::getInstance().executeUpdate(customerQuery);
+        auto customerResult = db::DatabaseManager::getInstance().executeUpdate(customerQuery);
 
         if (customerResult) {
             return userId;

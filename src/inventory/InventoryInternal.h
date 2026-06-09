@@ -3,15 +3,18 @@
 #include "inventory/Apparel/Apparel.h"
 #include <string>
 
+namespace auth = ::identity::auth;
+namespace apparel = ::inventory::apparel;
+
 namespace inventory::ui {
     bool processRentalCheckout(
-        const ::identity::auth::UserSession& session, 
-        const inventory::apparel::ApparelCatalog& item, 
+        const auth::UserSession& session, 
+        const apparel::ApparelCatalog& item, 
         int catalog_id
     );
     
     void showItemDetails(
-        const ::identity::auth::UserSession& session, 
+        const auth::UserSession& session, 
         const std::string &itemIdStr
     );
 }

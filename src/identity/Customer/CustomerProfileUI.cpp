@@ -4,14 +4,17 @@
 #include <print>
 #include <string>
 
+namespace auth = ::identity::auth;
+namespace profile = ::identity::profile;
+
 using namespace std;
 
 namespace identity::authui {
 
-    void viewProfile(const ::identity::auth::UserSession& session) {
+    void viewProfile(const auth::UserSession& session) {
         tool::ui::showHeader("USER PROFILE", 64);
 
-        auto profileOpt = ::identity::profile::Profile::getCustomerProfile(session.userid);
+        auto profileOpt = profile::Profile::getCustomerProfile(session.userid);
         if (profileOpt) {
             auto& profile = profileOpt.value();
             tool::ui::printField("Username", session.username);

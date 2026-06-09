@@ -7,6 +7,8 @@
 #include <format>
 #include <vector>
 
+namespace stats = ::transaction::rental::stats;
+
 using namespace std;
 
 namespace identity::adminui::reports {
@@ -14,7 +16,7 @@ namespace identity::adminui::reports {
     void showBranchPerformanceReport(
         vector<int>& activeShopIds, 
         vector<string>& activeShopNames,
-        transaction::rental::stats::DateRange& activeDateRange, 
+        stats::DateRange& activeDateRange, 
         string& activeDateRangeLabel
     ) {
         bool inReport = true;
@@ -34,7 +36,7 @@ namespace identity::adminui::reports {
             print(" | Time Range: {}\n", activeDateRangeLabel);
             println("");
 
-            auto branchOpt = transaction::rental::stats::getBranchPerformance(activeShopIds, activeDateRange);
+            auto branchOpt = stats::getBranchPerformance(activeShopIds, activeDateRange);
             if (!branchOpt) {
                 print("{}\n", format("  Error retrieving branch performance: {}", branchOpt.error()));
             } else {

@@ -9,6 +9,8 @@
 #include <conio.h>
 #include "tool/helper.h"
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::auth {
@@ -77,7 +79,7 @@ namespace identity::auth {
 
         // Query database to get the user's actual role
         string roleQuery = "SELECT roles FROM USERS WHERE user_id = " + to_string(userId) + ";";
-        auto roleResult = database::DatabaseManager::getInstance().executeQuery(roleQuery);
+        auto roleResult = db::DatabaseManager::getInstance().executeQuery(roleQuery);
         
         if (!roleResult) {
             println("\nError retrieving user role: {}", roleResult.error());
@@ -163,7 +165,7 @@ namespace identity::auth {
         string query = "SELECT user_id, username, password, roles FROM USERS WHERE username = '" 
                         + string(username) + "' AND is_deleted = 0;";
 
-        auto result = database::DatabaseManager::getInstance().executeQuery(query);
+        auto result = db::DatabaseManager::getInstance().executeQuery(query);
 
         if (!result) {
             return unexpected(result.error());
@@ -220,7 +222,7 @@ namespace identity::auth {
         // Check if username already exists
         string checkQuery = "SELECT user_id FROM USERS WHERE username = '" 
                                 + string(username) + "';";
-        auto checkResult = database::DatabaseManager::getInstance().executeQuery(checkQuery);
+        auto checkResult = db::DatabaseManager::getInstance().executeQuery(checkQuery);
         
         if (checkResult && checkResult.value()->next()) {
             delete checkResult.value();
@@ -236,7 +238,7 @@ namespace identity::auth {
             string(username) + "', '" +
             string(password) + "', '" + string(role) +"');";
 
-        auto insertResult = database::DatabaseManager::getInstance().executeUpdate(insertQuery);
+        auto insertResult = db::DatabaseManager::getInstance().executeUpdate(insertQuery);
 
         if (!insertResult) {
             return unexpected(insertResult.error());
@@ -245,7 +247,7 @@ namespace identity::auth {
         // Query to get the new user_id
         string selectQuery = "SELECT user_id FROM USERS WHERE username = '" 
                                 + string(username) + "';";
-        auto selectResult = database::DatabaseManager::getInstance().executeQuery(selectQuery);
+        auto selectResult = db::DatabaseManager::getInstance().executeQuery(selectQuery);
 
         if (!selectResult) {
             return unexpected(selectResult.error());

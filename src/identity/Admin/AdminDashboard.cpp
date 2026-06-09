@@ -8,11 +8,13 @@
 #include <thread>
 #include <format>
 
+namespace auth = ::identity::auth;
+
 using namespace std;
 
 namespace identity::adminui {
 
-    void showAdminDashboard(const ::identity::auth::UserSession& session) {
+    void showAdminDashboard(const auth::UserSession& session) {
         tool::helper::clearScreen();
         
         // Header with double-line borders
@@ -36,7 +38,7 @@ namespace identity::adminui {
         print("  Select an option: ");
     }
 
-    void handleAdminDashboard(const ::identity::auth::UserSession& session) {
+    void handleAdminDashboard(const auth::UserSession& session) {
         bool inAdminPanel = true;
         int invalidAttempts = 0;
         while (inAdminPanel) {
@@ -89,7 +91,7 @@ namespace identity::adminui {
         }
     }
 
-    void viewAdminProfile(const ::identity::auth::UserSession& session) {
+    void viewAdminProfile(const auth::UserSession& session) {
         tool::ui::showHeader("ADMIN PROFILE", 64);
 
         tool::ui::printField("Username", session.username);

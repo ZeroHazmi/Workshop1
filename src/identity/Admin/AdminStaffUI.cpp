@@ -11,6 +11,9 @@
 #include <format>
 #include <vector>
 
+namespace auth = ::identity::auth;
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::adminui {
@@ -19,7 +22,7 @@ namespace identity::adminui {
         tool::ui::showHeader("REGISTER STAFF ACCOUNT", 64);
 
         // Use the new registration flow with staff role
-        ::identity::auth::Auth::handleRegisterFlow("staff");
+        auth::Auth::handleRegisterFlow("staff");
         
         tool::ui::pressZeroToReturn("dashboard", 64);
     }
@@ -28,7 +31,7 @@ namespace identity::adminui {
         tool::ui::showHeader("MANAGE STAFF ACCOUNT", 78);
 
         // 1. Fetch and display all registered staff in a formatted table
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
         string primaryQuery = 
             "SELECT s.staff_id, s.unique_id, s.user_id, s.staff_name, u.username, s.position, s.phone_no, s.shop_id, "
             "       COALESCE(sh.shop_name, CONCAT('Shop #', s.shop_id)) AS shop_name "
@@ -247,7 +250,7 @@ namespace identity::adminui {
         tool::ui::pressZeroToReturn("dashboard", 64);
     }
 
-    void showStaffManagementSubmenu(const ::identity::auth::UserSession& session) {
+    void showStaffManagementSubmenu(const auth::UserSession& session) {
         bool inSubmenu = true;
         int invalidAttempts = 0;
         while (inSubmenu) {

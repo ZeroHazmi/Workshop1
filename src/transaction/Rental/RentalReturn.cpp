@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <expected>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace transaction::rental {
@@ -16,7 +18,7 @@ namespace transaction::rental {
         const string& actual_return_date, 
         const string& condition
     ) {
-        auto& db = database::DatabaseManager::getInstance();
+        auto& db = db::DatabaseManager::getInstance();
 
         // 1. Fetch details of the active rental
         string selectQuery = format(

@@ -11,6 +11,8 @@
 #include <vector>
 #include <thread>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::adminui::reports {
@@ -41,7 +43,7 @@ namespace identity::adminui::reports {
             print(" | Status: {}\n", statusFilter);
             println("");
 
-            auto& db = database::DatabaseManager::getInstance();
+            auto& db = db::DatabaseManager::getInstance();
 
             // Count total matching records for pagination
             string countQuery = "SELECT COUNT(*) FROM invoices inv JOIN rental r ON inv.rental_id = r.rental_id WHERE 1=1";

@@ -11,11 +11,14 @@
 #include <format>
 #include <algorithm>
 
+namespace auth = ::identity::auth;
+namespace rental = ::transaction::rental;
+
 using namespace std;
 
 namespace identity::staffui {
 
-    void manageRentalsAndReturns(const ::identity::auth::UserSession& session) {
+    void manageRentalsAndReturns(const auth::UserSession& session) {
         bool inRentalsMenu = true;
         string searchTerm = "";
         int currentPage = 1;
@@ -34,7 +37,7 @@ namespace identity::staffui {
             tool::ui::printRow(colWidths, {"ID", "CUSTOMER", "ITEM RENTED", "SIZE", "RETURN DATE", "RATE/DAY", "STATUS"});
             tool::helper::drawLine(85, '-');
 
-            auto result = ::transaction::rental::getActiveRentals(searchTerm);
+            auto result = rental::getActiveRentals(searchTerm);
             if (result) {
                 const auto& allItems = result.value();
                 int totalItems = static_cast<int>(allItems.size());
@@ -146,7 +149,7 @@ namespace identity::staffui {
                     if (condition == "0") continue;
 
                     println("\n  Processing return...");
-                    auto returnRes = ::transaction::rental::processCostumeReturn(rentalIdInput, returnDate, condition);
+                    auto returnRes = rental::processCostumeReturn(rentalIdInput, returnDate, condition);
                     if (returnRes) {
                         println("{}", returnRes.value());
                     } else {

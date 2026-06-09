@@ -10,11 +10,15 @@
 #include <iostream>
 #include <thread>
 
+namespace auth = ::identity::auth;
+namespace profile = ::identity::profile;
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::staffui {
 
-    void showStaffDashboard(const ::identity::auth::UserSession& session) {
+    void showStaffDashboard(const auth::UserSession& session) {
         tool::helper::clearScreen();
         
         // Header with double-line borders
@@ -37,7 +41,7 @@ namespace identity::staffui {
         print("  Select an option: ");
     }
 
-    void handleStaffDashboard(const ::identity::auth::UserSession& session) {
+    void handleStaffDashboard(const auth::UserSession& session) {
         bool inStaffPanel = true;
         int invalidAttempts = 0;
         while (inStaffPanel) {
@@ -86,10 +90,10 @@ namespace identity::staffui {
         }
     }
 
-    void viewStaffProfile(const ::identity::auth::UserSession& session) {
+    void viewStaffProfile(const auth::UserSession& session) {
         tool::ui::showHeader("STAFF PROFILE", 64);
 
-        auto profileRes = ::identity::profile::Profile::getStaffProfile(session.userid);
+        auto profileRes = profile::Profile::getStaffProfile(session.userid);
         if (profileRes) {
             auto staff = profileRes.value();
             tool::ui::printField("Staff Name", staff.staff_name);
@@ -101,7 +105,7 @@ namespace identity::staffui {
             // Query shop name dynamically using shop_id
             string shopName = "Not Assigned";
             if (staff.shop_id > 0) {
-                auto& db = database::DatabaseManager::getInstance();
+                auto& db = db::DatabaseManager::getInstance();
                 string shopQuery = "SELECT shop_name FROM shops WHERE shop_id = " + to_string(staff.shop_id) + ";";
                 auto shopRes = db.executeQuery(shopQuery);
                 if (shopRes) {

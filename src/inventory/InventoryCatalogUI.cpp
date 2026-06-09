@@ -14,14 +14,17 @@
 #include <thread>
 #include <vector>
 
+namespace auth = ::identity::auth;
+namespace apparel = ::inventory::apparel;
+
 using namespace std;
 
 namespace inventory::ui {
 
-    void showItemDetails(const ::identity::auth::UserSession& session, const string &itemIdStr) {
+    void showItemDetails(const auth::UserSession& session, const string &itemIdStr) {
       bool isCustomer = (find(session.roles.begin(), session.roles.end(), "customer") != session.roles.end());
 
-      auto itemOpt = inventory::apparel::getApparelByUniqueId(itemIdStr);
+      auto itemOpt = apparel::getApparelByUniqueId(itemIdStr);
       if (!itemOpt) {
           println("  {}", itemOpt.error());
           this_thread::sleep_for(chrono::milliseconds(1000));
@@ -45,7 +48,7 @@ namespace inventory::ui {
         println("  Colour      : {}", item.colour);
         println("");
         println("  Available Sizes in Stock:");
-        auto sizesOpt = inventory::apparel::getAvailableSizes(catalog_id);
+        auto sizesOpt = apparel::getAvailableSizes(catalog_id);
         if (sizesOpt && !sizesOpt.value().empty()) {
             for (const auto& [size, qty] : sizesOpt.value()) {
                 println("  - {}  (Qty: {})", size, qty);
@@ -87,7 +90,7 @@ namespace inventory::ui {
       }
     }
 
-    void showCatalog(const ::identity::auth::UserSession& session) {
+    void showCatalog(const auth::UserSession& session) {
       bool inCatalog = true;
       int currentPage = 1;
       const int itemsPerPage = 25;
@@ -95,7 +98,7 @@ namespace inventory::ui {
       int invalidAttempts = 0;
 
       while (inCatalog) {
-        auto countRes = inventory::apparel::getTotalApparelsCount(searchTerm);
+        auto countRes = apparel::getTotalApparelsCount(searchTerm);
         int totalItems = countRes ? countRes.value() : 0;
         int totalPages = totalItems == 0 ? 1 : (totalItems + itemsPerPage - 1) / itemsPerPage;
         
@@ -114,7 +117,7 @@ namespace inventory::ui {
         tool::helper::drawLine(75, '-');
 
         int offset = (currentPage - 1) * itemsPerPage;
-        auto result = inventory::apparel::getCatalogDisplay(itemsPerPage, offset, searchTerm);
+        auto result = apparel::getCatalogDisplay(itemsPerPage, offset, searchTerm);
         
         if (result) {
             for (const auto& item : result.value()) {
@@ -149,7 +152,7 @@ namespace inventory::ui {
         if (choice == "0" || choice == "N" || choice == "n" || choice == "P" || choice == "p" || choice == "S" || choice == "s") {
             validChoice = true;
         } else {
-            auto itemOpt = inventory::apparel::getApparelByUniqueId(choice);
+            auto itemOpt = apparel::getApparelByUniqueId(choice);
             if (itemOpt) {
                 validChoice = true;
             }
