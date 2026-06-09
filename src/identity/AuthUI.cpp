@@ -84,7 +84,6 @@ namespace identity::authui {
             switch (subChoice) {
                 case 1: 
                     invalidAttempts = 0;
-                    // inventory::browseApparel
                     inventory::ui::showCatalog(session);
                     break;
                 case 2: 
@@ -93,12 +92,10 @@ namespace identity::authui {
                     break;
                 case 3: 
                     invalidAttempts = 0;
-                    // profile::updateProfile(session.userid);
                     viewProfile(session); 
                     break;
                 case 4: 
                     invalidAttempts = 0;
-                    // profile::manageBank(session.userid);
                     manageBankAccount(session);
                     break;
                 case 0:
@@ -366,20 +363,14 @@ namespace identity::authui {
             return;
         }
 
-        // Color palette for graphs (12 unique distinct colors)
+        // Color palette for graphs
         const std::vector<std::string> barColors = {
             "\033[96m", // Bright Cyan
             "\033[95m", // Bright Magenta
             "\033[93m", // Bright Yellow
             "\033[94m", // Bright Blue
             "\033[92m", // Bright Green
-            "\033[91m", // Bright Red
-            "\033[36m", // Cyan
-            "\033[35m", // Magenta
-            "\033[33m", // Yellow
-            "\033[34m", // Blue
-            "\033[32m", // Green
-            "\033[31m"  // Red
+            "\033[91m"  // Bright Red
         };
 
         // 1. POPULAR CATEGORIES (Horizontal Bar Chart)

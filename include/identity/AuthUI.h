@@ -7,4 +7,7 @@ namespace identity::authui {
     void showSplashScreen();
     void viewProfile(const ::identity::auth::UserSession& session);
     void manageBankAccount(const ::identity::auth::UserSession& session);
+    void viewRentalHistory(const ::identity::auth::UserSession& session);
+    void viewBookingBehaviour(const ::identity::auth::UserSession& session);
+    void handleRentalHistoryMenu(const ::identity::auth::UserSession& session);
 }

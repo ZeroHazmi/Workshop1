@@ -481,8 +481,8 @@ namespace transaction::rental {
         if (!detailsRes) return std::unexpected("Failed to update rental details: " + detailsRes.error());
 
         // 6. Update apparel_item status and condition
-        // If condition is less than Good (Fair, Poor, or Damaged), route to Laundry
-        std::string nextStatus = (condition == "Excellent" || condition == "Good") ? "Available" : "Laundry";
+        // All returned items go to Laundry first to ensure hygiene and sanitation
+        std::string nextStatus = "Laundry";
         std::string itemUpdate = std::format(
             "UPDATE apparel_item SET status = '{}', condition_status = '{}' WHERE item_id = {} AND is_deleted = 0",
             nextStatus, condition, item_id

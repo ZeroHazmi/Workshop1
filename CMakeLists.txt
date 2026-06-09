@@ -21,9 +21,17 @@ set(SOURCES
 	src/identity/Auth/Auth.cpp
 	src/identity/Customer/Customer.cpp
 	src/identity/Staff/Staff.cpp
-	src/identity/AuthUI.cpp
-	src/identity/AdminUI.cpp
-	src/identity/StaffUI.cpp
+	src/identity/Admin/AdminDashboard.cpp
+	src/identity/Admin/AdminStaffUI.cpp
+	src/identity/Admin/AdminShopUI.cpp
+	src/identity/Admin/AdminReportsUI.cpp
+	src/identity/Customer/CustomerDashboard.cpp
+	src/identity/Customer/CustomerProfileUI.cpp
+	src/identity/Customer/CustomerBankUI.cpp
+	src/identity/Customer/CustomerRentalHistoryUI.cpp
+	src/identity/Staff/StaffDashboard.cpp
+	src/identity/Staff/StaffInventoryUI.cpp
+	src/identity/Staff/StaffRentalsUI.cpp
 	src/inventory/Apparel/Apparel.cpp
 	src/inventory/InventoryUI.cpp
 	src/transaction/Rental/Rental.cpp
