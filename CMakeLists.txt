@@ -25,6 +25,11 @@ set(SOURCES
 	src/identity/Admin/AdminStaffUI.cpp
 	src/identity/Admin/AdminShopUI.cpp
 	src/identity/Admin/AdminReportsUI.cpp
+	src/identity/Admin/Reports/MonthlyRevenueReport.cpp
+	src/identity/Admin/Reports/CostumePopularityReport.cpp
+	src/identity/Admin/Reports/BranchPerformanceReport.cpp
+	src/identity/Admin/Reports/InventoryQualityReport.cpp
+	src/identity/Admin/Reports/InvoiceLedgerReport.cpp
 	src/identity/Customer/CustomerDashboard.cpp
 	src/identity/Customer/CustomerProfileUI.cpp
 	src/identity/Customer/CustomerBankUI.cpp
@@ -33,8 +38,12 @@ set(SOURCES
 	src/identity/Staff/StaffInventoryUI.cpp
 	src/identity/Staff/StaffRentalsUI.cpp
 	src/inventory/Apparel/Apparel.cpp
-	src/inventory/InventoryUI.cpp
-	src/transaction/Rental/Rental.cpp
+	src/inventory/InventoryCatalogUI.cpp
+	src/inventory/InventoryCheckoutUI.cpp
+	src/inventory/InventoryRegisterUI.cpp
+	src/transaction/Rental/RentalCreation.cpp
+	src/transaction/Rental/RentalReturn.cpp
+	src/transaction/Rental/RentalQueries.cpp
 	src/transaction/Rental/AdminStats.cpp
 	src/DatabaseManager/DatabaseManager.cpp
 	src/tool/helper.cpp
