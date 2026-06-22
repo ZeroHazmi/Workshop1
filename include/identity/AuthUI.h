@@ -4,9 +4,10 @@
 namespace identity::authui {
     void showCustomerDashboard(const ::identity::auth::UserSession& session);
     void handleCustomerDashboard(const ::identity::auth::UserSession& session);
-    void showAdminDashboard(const ::identity::auth::UserSession& session);
-    void handleAdminDashboard(const ::identity::auth::UserSession& session);
     void showSplashScreen();
     void viewProfile(const ::identity::auth::UserSession& session);
     void manageBankAccount(const ::identity::auth::UserSession& session);
+    void viewRentalHistory(const ::identity::auth::UserSession& session);
+    void viewBookingBehaviour(const ::identity::auth::UserSession& session);
+    void handleRentalHistoryMenu(const ::identity::auth::UserSession& session);
 }

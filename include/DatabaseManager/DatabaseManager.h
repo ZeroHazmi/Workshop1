@@ -22,11 +22,9 @@ public:
         return instance;
     }
 
-    // Delete copy/assignment for Singleton integrity
     DatabaseManager(const DatabaseManager&) = delete;
     DatabaseManager& operator=(const DatabaseManager&) = delete;
 
-    // C++23 std::expected for robust error handling
     std::expected<void, std::string> connect();
     std::expected<sql::ResultSet*, std::string> executeQuery(std::string_view query);
     std::expected<int, std::string> executeUpdate(std::string_view query);
@@ -42,10 +40,10 @@ private:
     std::unique_ptr<sql::Connection> con;
 
     // Credentials matching your existing MySQL setup
-    const std::string host = "tcp://127.0.0.1:3306";
-    const std::string user = "root";
-    const std::string pass = "Testing184"; 
-    const std::string schema = "clothing_rental";
+    std::string host = "tcp://127.0.0.1:3306";
+    std::string user = "root";
+    std::string pass = ""; 
+    std::string schema = "clothing_rental";
 };
 
 } // namespace database

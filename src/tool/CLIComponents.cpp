@@ -70,4 +70,46 @@ namespace tool::ui {
         }
         println("  {:<15} : {}", label, priceStr);
     }
+
+    void showHeader(string_view title, int width, char decoration) {
+        tool::helper::clearScreen();
+        tool::helper::drawLine(width, decoration);
+        displayTitle(title, width);
+        tool::helper::drawLine(width, decoration);
+        println("");
+    }
+
+    bool handleInvalidAttempt(int& invalidAttempts, int maxAttempts, int pauseSeconds) {
+        invalidAttempts++;
+        if (invalidAttempts >= maxAttempts) {
+            println("\nToo many invalid attempts. Pausing for {} seconds...", pauseSeconds);
+            this_thread::sleep_for(chrono::seconds(pauseSeconds));
+            invalidAttempts = 0;
+            return true;
+        }
+        return false;
+    }
+
+    void pressZeroToReturn(string_view destination, int width) {
+        println("");
+        tool::helper::drawLine(width, '-');
+        string waitInput;
+        do {
+            print("\nEnter '0' to return to {}: ", destination);
+            if (!getline(cin, waitInput)) {
+                break;
+            }
+        } while (waitInput != "0");
+    }
+
+    void printPaginationFooter(int currentPage, int totalPages, int totalItems, int width) {
+        if (totalPages > 1) {
+            string pageInfo = format("Page {} of {} | Total: {}", currentPage, totalPages, totalItems);
+            int padding = (width - static_cast<int>(pageInfo.length())) / 2;
+            string spaces(padding > 0 ? padding : 0, ' ');
+            println("{}{}", spaces, pageInfo);
+            tool::helper::drawLine(width, '-');
+            println("  [N] Next Page      [P] Previous Page");
+        }
+    }
 }

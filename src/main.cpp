@@ -17,6 +17,14 @@
 #include "identity/StaffUI.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "tool/input.h"
+#include "tool/EnvHelper.h"
+
+namespace db = ::database;
+namespace auth = ::identity::auth;
+namespace authui = ::identity::authui;
+namespace adminui = ::identity::adminui;
+namespace staffui = ::identity::staffui;
 
 using namespace std;
 
@@ -26,39 +34,39 @@ int main() {
     SetConsoleCP(CP_UTF8);
 #endif
 
-    if (!database::DatabaseManager::getInstance().connect()) {
+    // Load configuration settings from local environment file
+    tool::env::load(".env");
+
+    if (!db::DatabaseManager::getInstance().connect()) {
         println(stderr, "Application failed to start: Database connection error.");
         return 1;
     }
 
 // 2. Instantiate Auth Service
-    ::identity::auth::Auth authService;
-    
-    // Formal Landing Screen
-    ::identity::authui::showSplashScreen();
+    auth::Auth authService;
 
     int invalidAttempts = 0;
     bool systemRunning = true;
     while (systemRunning) {
+        // Formal Landing Screen
+        authui::showSplashScreen();
+
         println("\n--- MAIN GATEWAY ---");
         println("[1] Login");
         println("[2] Register New Account");
-        println("[3] Exit System");
+        println("[3] Forgot Password");
+        println("[0] Exit System");
         print("Selection: ");
 
         int choice;
         // Basic input validation for CLI navigation
-        if (!(cin >> choice)) {
-            cin.clear();
-            cin.ignore(1000, '\n');
-            println("Invalid input. Please enter a number.");
-            invalidAttempts++;
-            if (invalidAttempts >= 3) {
-                println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                this_thread::sleep_for(chrono::seconds(5));
-                invalidAttempts = 0;
+        if (!tool::input::readInt(choice)) {
+            println("  Invalid selection.");
+            if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                 tool::helper::clearScreen();
-                ::identity::authui::showSplashScreen();
+                authui::showSplashScreen();
+            } else {
+                this_thread::sleep_for(chrono::milliseconds(1000));
             }
             continue;
         }
@@ -72,19 +80,19 @@ int main() {
                     auto& session = sessionResult.value();
                     
                     // Route to appropriate dashboard based on role
-                    std::string role = session.roles.front();
+                    string role = session.roles.front();
                     
                     if (role == "admin") {
-                        ::identity::adminui::handleAdminDashboard(session);
+                        adminui::handleAdminDashboard(session);
                     } else if (role == "staff") {
-                        ::identity::staffui::handleStaffDashboard(session);
+                        staffui::handleStaffDashboard(session);
                     } else {
                         // Default to customer dashboard
-                        ::identity::authui::handleCustomerDashboard(session);
+                        authui::handleCustomerDashboard(session);
                     }
                 } else {
                     tool::helper::clearScreen();
-                    ::identity::authui::showSplashScreen();
+                    authui::showSplashScreen();
                 }
                 break;
             }
@@ -96,21 +104,22 @@ int main() {
                 break;
             case 3:
                 invalidAttempts = 0;
+                auth::Auth::handleForgotPasswordFlow();
+                break;
+            case 0:
+                invalidAttempts = 0;
                 println("Shutting down FWCRS. Goodbye.");
                 systemRunning = false;
                 break;
             default:
-                println("Invalid selection. Please try again.");
-                invalidAttempts++;
-                if (invalidAttempts >= 3) {
-                    println("\nToo many invalid attempts. Pausing for 5 seconds...");
-                    this_thread::sleep_for(chrono::seconds(5));
-                    invalidAttempts = 0;
+                println("  Invalid selection.");
+                if (tool::ui::handleInvalidAttempt(invalidAttempts)) {
                     tool::helper::clearScreen();
-                    ::identity::authui::showSplashScreen();
+                    authui::showSplashScreen();
+                } else {
+                    this_thread::sleep_for(chrono::milliseconds(1000));
                 }
         }
     }
     return 0;
 }
-

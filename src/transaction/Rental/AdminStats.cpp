@@ -4,16 +4,19 @@
 #include <algorithm>
 #include <iostream>
 
+namespace db = ::database;
+namespace rental = ::transaction::rental;
+
 using namespace std;
 
 namespace transaction::rental::stats {
 
     // Helper to format a vector of shop IDs into a dynamic MySQL IN list, e.g. "(1, 3)"
-    std::string buildShopIdsList(const std::vector<int>& shopIds) {
+    string buildShopIdsList(const vector<int>& shopIds) {
         if (shopIds.empty()) return "";
-        std::string list = "(";
+        string list = "(";
         for (size_t i = 0; i < shopIds.size(); ++i) {
-            list += std::to_string(shopIds[i]);
+            list += to_string(shopIds[i]);
             if (i + 1 < shopIds.size()) {
                 list += ", ";
             }
@@ -23,8 +26,8 @@ namespace transaction::rental::stats {
     }
 
     // Helper to construct dynamic date range filters
-    std::string buildDateFilter(const DateRange& dateRange) {
-        std::string filter = "";
+    string buildDateFilter(const DateRange& dateRange) {
+        string filter = "";
         if (!dateRange.startDate.empty()) {
             filter += "AND r.rental_date >= '" + dateRange.startDate + " 00:00:00' ";
         }
@@ -34,28 +37,28 @@ namespace transaction::rental::stats {
         return filter;
     }
 
-    std::expected<std::vector<RevenueTrendPoint>, std::string> getRevenueTrends(
-        const std::vector<int>& shopIds, 
+    expected<vector<RevenueTrendPoint>, string> getRevenueTrends(
+        const vector<int>& shopIds, 
         const DateRange& dateRange
     ) {
-        auto& db = database::DatabaseManager::getInstance();
-        std::vector<RevenueTrendPoint> trends;
+        auto& db = db::DatabaseManager::getInstance();
+        vector<RevenueTrendPoint> trends;
 
-        std::string shopFilter = "";
+        string shopFilter = "";
         if (!shopIds.empty()) {
             shopFilter = "AND r.shop_id IN " + buildShopIdsList(shopIds) + " ";
         }
 
-        std::string dateFilter = buildDateFilter(dateRange);
+        string dateFilter = buildDateFilter(dateRange);
 
         // Dynamically adjust LIMIT based on whether custom date filtering is active
-        std::string limitClause = "LIMIT 6";
+        string limitClause = "LIMIT 6";
         if (!dateRange.startDate.empty() || !dateRange.endDate.empty()) {
             limitClause = ""; // Pull all matching months in specified range
         }
 
         // Query aggregating last 6 months (or custom date range) of base + late fee revenue
-        std::string query = 
+        string query = 
             "SELECT DATE_FORMAT(r.rental_date, '%b %Y') AS month_name, "
             "       SUM(COALESCE(inv.base_fee + inv.late_fee, 0.00)) AS revenue, "
             "       DATE_FORMAT(r.rental_date, '%Y-%m') AS sort_month "
@@ -67,7 +70,7 @@ namespace transaction::rental::stats {
 
         auto result = db.executeQuery(query);
         if (!result) {
-            return std::unexpected("Failed to query revenue trends: " + result.error());
+            return unexpected("Failed to query revenue trends: " + result.error());
         }
 
         sql::ResultSet* rs = result.value();
@@ -80,25 +83,25 @@ namespace transaction::rental::stats {
         delete rs;
 
         // Reverse so months flow chronologically (past to present)
-        std::reverse(trends.begin(), trends.end());
+        reverse(trends.begin(), trends.end());
         return trends;
     }
 
-    std::expected<std::vector<CostumePopularityPoint>, std::string> getCostumePopularity(
-        const std::vector<int>& shopIds, 
+    expected<vector<CostumePopularityPoint>, string> getCostumePopularity(
+        const vector<int>& shopIds, 
         const DateRange& dateRange
     ) {
-        auto& db = database::DatabaseManager::getInstance();
-        std::vector<CostumePopularityPoint> points;
+        auto& db = db::DatabaseManager::getInstance();
+        vector<CostumePopularityPoint> points;
 
-        std::string shopFilter = "";
+        string shopFilter = "";
         if (!shopIds.empty()) {
             shopFilter = "AND r.shop_id IN " + buildShopIdsList(shopIds) + " ";
         }
 
-        std::string dateFilter = buildDateFilter(dateRange);
+        string dateFilter = buildDateFilter(dateRange);
 
-        std::string query = 
+        string query = 
             "SELECT c.name AS catalog_name, COUNT(*) AS rental_count "
             "FROM rental r "
             "JOIN rental_details rd ON r.rental_id = rd.rental_id "
@@ -111,7 +114,7 @@ namespace transaction::rental::stats {
 
         auto result = db.executeQuery(query);
         if (!result) {
-            return std::unexpected("Failed to query costume popularity: " + result.error());
+            return unexpected("Failed to query costume popularity: " + result.error());
         }
 
         sql::ResultSet* rs = result.value();
@@ -125,21 +128,21 @@ namespace transaction::rental::stats {
         return points;
     }
 
-    std::expected<std::vector<BranchPerformancePoint>, std::string> getBranchPerformance(
-        const std::vector<int>& shopIds, 
+    expected<vector<BranchPerformancePoint>, string> getBranchPerformance(
+        const vector<int>& shopIds, 
         const DateRange& dateRange
     ) {
-        auto& db = database::DatabaseManager::getInstance();
-        std::vector<BranchPerformancePoint> points;
+        auto& db = db::DatabaseManager::getInstance();
+        vector<BranchPerformancePoint> points;
 
-        std::string shopFilter = "";
+        string shopFilter = "";
         if (!shopIds.empty()) {
             shopFilter = "AND r.shop_id IN " + buildShopIdsList(shopIds) + " ";
         }
 
-        std::string dateFilter = buildDateFilter(dateRange);
+        string dateFilter = buildDateFilter(dateRange);
 
-        std::string primaryQuery = 
+        string primaryQuery = 
             "SELECT COALESCE(s.shop_name, CONCAT('Branch #', r.shop_id)) AS shop_name, "
             "       SUM(COALESCE(inv.base_fee + inv.late_fee, 0.00)) AS revenue "
             "FROM rental r "
@@ -152,7 +155,7 @@ namespace transaction::rental::stats {
         auto result = db.executeQuery(primaryQuery);
         if (!result) {
             // Graceful fallback query
-            std::string fallbackQuery = 
+            string fallbackQuery = 
                 "SELECT CONCAT('Branch #', r.shop_id) AS shop_name, "
                 "       SUM(COALESCE(inv.base_fee + inv.late_fee, 0.00)) AS revenue "
                 "FROM rental r "
@@ -165,7 +168,7 @@ namespace transaction::rental::stats {
         }
 
         if (!result) {
-            return std::unexpected("Failed to query branch performance: " + result.error());
+            return unexpected("Failed to query branch performance: " + result.error());
         }
 
         sql::ResultSet* rs = result.value();
@@ -179,15 +182,15 @@ namespace transaction::rental::stats {
         return points;
     }
 
-    std::expected<std::vector<InventoryConditionPoint>, std::string> getInventoryConditionAudit(
-        const std::vector<int>& shopIds
+    expected<vector<InventoryConditionPoint>, string> getInventoryConditionAudit(
+        const vector<int>& shopIds
     ) {
-        auto& db = database::DatabaseManager::getInstance();
-        std::vector<InventoryConditionPoint> points;
+        auto& db = db::DatabaseManager::getInstance();
+        vector<InventoryConditionPoint> points;
 
-        std::string query;
+        string query;
         if (!shopIds.empty()) {
-            std::string shopFilter = "AND c.shop_id IN " + buildShopIdsList(shopIds) + " ";
+            string shopFilter = "AND c.shop_id IN " + buildShopIdsList(shopIds) + " ";
             query = 
                 "SELECT i.condition_status AS condition_status, COUNT(*) AS count "
                 "FROM apparel_item i "
@@ -206,7 +209,7 @@ namespace transaction::rental::stats {
 
         auto result = db.executeQuery(query);
         if (!result) {
-            return std::unexpected("Failed to query inventory condition: " + result.error());
+            return unexpected("Failed to query inventory condition: " + result.error());
         }
 
         sql::ResultSet* rs = result.value();
@@ -220,4 +223,4 @@ namespace transaction::rental::stats {
         return points;
     }
 
-} // namespace transaction::rental::stats
+} // namespace rental::stats

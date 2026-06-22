@@ -2,6 +2,8 @@
 #include "DatabaseManager/DatabaseManager.h"
 #include <print>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::customer {
@@ -15,8 +17,22 @@ namespace identity::customer {
         if (fullname.empty()) {
             return unexpected("Full name is required for customer profile.");
         }
+        if (email.empty()) {
+            return unexpected("Email is required for customer profile.");
+        }
 
-        string uniqueId = database::DatabaseManager::generateUniqueId("CST");
+        // Check if email already exists
+        string checkEmailQuery = "SELECT customer_id FROM CUSTOMERS WHERE email = '" + string(email) + "' AND is_deleted = 0;";
+        auto checkRes = db::DatabaseManager::getInstance().executeQuery(checkEmailQuery);
+        if (checkRes && checkRes.value()->next()) {
+            delete checkRes.value();
+            return unexpected("Email address is already registered.");
+        }
+        if (checkRes && checkRes.value()) {
+            delete checkRes.value();
+        }
+
+        string uniqueId = db::DatabaseManager::generateUniqueId("CST");
 
         // Insert corresponding CUSTOMER record
         string customerQuery =
@@ -27,7 +43,7 @@ namespace identity::customer {
             string(phone) + "', '" +
             uniqueId + "');";
 
-        auto customerResult = database::DatabaseManager::getInstance().executeUpdate(customerQuery);
+        auto customerResult = db::DatabaseManager::getInstance().executeUpdate(customerQuery);
 
         if (customerResult) {
             return userId;

@@ -17,25 +17,40 @@ link_directories("${MYSQL_CON_DIR}/lib64/vs14")
 # Source files
 set(SOURCES
 	src/main.cpp
-	src/identity/Users/Users.cpp
 	src/identity/Profile/Profile.cpp
 	src/identity/Auth/Auth.cpp
 	src/identity/Customer/Customer.cpp
 	src/identity/Staff/Staff.cpp
-	src/identity/AuthUI.cpp
-	src/identity/AdminUI.cpp
-	src/identity/StaffUI.cpp
-	src/inventory/Shops/Shops.cpp
+	src/identity/Admin/AdminDashboard.cpp
+	src/identity/Admin/AdminStaffUI.cpp
+	src/identity/Admin/AdminShopUI.cpp
+	src/identity/Admin/AdminReportsUI.cpp
+	src/identity/Admin/Reports/MonthlyRevenueReport.cpp
+	src/identity/Admin/Reports/CostumePopularityReport.cpp
+	src/identity/Admin/Reports/BranchPerformanceReport.cpp
+	src/identity/Admin/Reports/InventoryQualityReport.cpp
+	src/identity/Admin/Reports/InvoiceLedgerReport.cpp
+	src/identity/Customer/CustomerDashboard.cpp
+	src/identity/Customer/CustomerProfileUI.cpp
+	src/identity/Customer/CustomerBankUI.cpp
+	src/identity/Customer/CustomerRentalHistoryUI.cpp
+	src/identity/Staff/StaffDashboard.cpp
+	src/identity/Staff/StaffInventoryUI.cpp
+	src/identity/Staff/StaffRentalsUI.cpp
 	src/inventory/Apparel/Apparel.cpp
-	src/inventory/InventoryUI.cpp
-	src/transaction/Rental_Details/Rental_Details.cpp
-	src/transaction/Rental/Rental.cpp
+	src/inventory/InventoryCatalogUI.cpp
+	src/inventory/InventoryCheckoutUI.cpp
+	src/inventory/InventoryRegisterUI.cpp
+	src/transaction/Rental/RentalCreation.cpp
+	src/transaction/Rental/RentalReturn.cpp
+	src/transaction/Rental/RentalQueries.cpp
 	src/transaction/Rental/AdminStats.cpp
-	src/transaction/RentalUI.cpp
 	src/DatabaseManager/DatabaseManager.cpp
 	src/tool/helper.cpp
+	src/tool/EnvHelper.cpp
 	src/tool/DateHelper.cpp
 	src/tool/CLIComponents.cpp
+	src/tool/input.cpp
 )
 
 include(CTest)

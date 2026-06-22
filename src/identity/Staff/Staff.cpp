@@ -2,6 +2,8 @@
 #include "DatabaseManager/DatabaseManager.h"
 #include <print>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::staff {
@@ -21,16 +23,20 @@ namespace identity::staff {
             return unexpected("Valid shop ID is required.");
         }
 
+        // Generate unique ID for staff member
+        string uniqueId = db::DatabaseManager::generateUniqueId("STF");
+
         // Insert STAFF record
         string staffQuery =
-            "INSERT INTO STAFF (user_id, shop_id, staff_name, position, phone_no) VALUES (" +
+            "INSERT INTO STAFF (user_id, shop_id, staff_name, position, phone_no, unique_id) VALUES (" +
             to_string(userId) + ", " +
             to_string(shopId) + ", '" +
             string(staffName) + "', '" +
             string(position) + "', '" +
-            string(phone) + "');";
+            string(phone) + "', '" +
+            uniqueId + "');";
 
-        auto staffResult = database::DatabaseManager::getInstance().executeUpdate(staffQuery);
+        auto staffResult = db::DatabaseManager::getInstance().executeUpdate(staffQuery);
 
         if (staffResult) {
             return userId;

@@ -1,4 +1,5 @@
 #include "DatabaseManager/DatabaseManager.h"
+#include "tool/EnvHelper.h"
 #include <print>
 #include <random>
 #include <format>
@@ -13,6 +14,11 @@ DatabaseManager::~DatabaseManager() {
 }
 
 expected<void, string> DatabaseManager::connect() {
+    host = tool::env::get("DB_HOST", "tcp://127.0.0.1:3306");
+    user = tool::env::get("DB_USER", "root");
+    pass = tool::env::get("DB_PASS", "");
+    schema = tool::env::get("DB_SCHEMA", "clothing_rental");
+
     try {
         driver = get_driver_instance();
         con.reset(driver->connect(host, user, pass));
@@ -50,17 +56,17 @@ expected<int, string> DatabaseManager::executeUpdate(string_view query) {
     }
 }
 
-std::string DatabaseManager::generateUniqueId(string_view prefix) {
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    static std::uniform_int_distribution<> dis(0, 35);
+string DatabaseManager::generateUniqueId(string_view prefix) {
+    static random_device rd;
+    static mt19937 gen(rd());
+    static uniform_int_distribution<> dis(0, 35);
     const char chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
-    std::string suffix;
+    string suffix;
     for (int i = 0; i < 6; ++i) {
         suffix += chars[dis(gen)];
     }
-    return std::format("{}-{}", prefix, suffix);
+    return format("{}-{}", prefix, suffix);
 }
 
 } // namespace database

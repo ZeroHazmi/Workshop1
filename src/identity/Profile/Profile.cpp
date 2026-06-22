@@ -3,6 +3,8 @@
 #include <print>
 #include <iostream>
 
+namespace db = ::database;
+
 using namespace std;
 
 namespace identity::profile {
@@ -13,7 +15,7 @@ expected<CustomerProfile, string> Profile::getCustomerProfile(int user_id) {
 	string query = "SELECT cust_id, unique_id, user_id, fullname, email, phone_no FROM CUSTOMERS WHERE user_id = " 
 					   + to_string(user_id) + ";";
 
-	auto result = database::DatabaseManager::getInstance().executeQuery(query);
+	auto result = db::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -48,7 +50,7 @@ expected<bool, string> Profile::updateCustomerProfile(
 					   "', phone_no = '" + string(phone_no) + 
 					   "' WHERE user_id = " + to_string(user_id) + ";";
 
-	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
+	auto result = db::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -63,7 +65,7 @@ expected<StaffProfile, string> Profile::getStaffProfile(int user_id) {
 	string query = "SELECT staff_id, unique_id, user_id, shop_id, staff_name, position, phone_no FROM STAFF WHERE user_id = " 
 				   + to_string(user_id) + ";";
 
-	auto result = database::DatabaseManager::getInstance().executeQuery(query);
+	auto result = db::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -99,7 +101,7 @@ expected<bool, string> Profile::updateStaffProfile(
 					   "', phone_no = '" + string(phone_no) + 
 					   "' WHERE staff_id = " + to_string(staff_id) + ";";
 
-	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
+	auto result = db::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -114,7 +116,7 @@ expected<BankAccount, string> Profile::getBankAccount(int user_id) {
 	string query = "SELECT acc_id, unique_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
 				   + to_string(user_id) + " AND is_deleted = 0 LIMIT 1;";
 
-	auto result = database::DatabaseManager::getInstance().executeQuery(query);
+	auto result = db::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -144,7 +146,7 @@ expected<vector<BankAccount>, string> Profile::getAllBankAccounts(int user_id) {
 	string query = "SELECT acc_id, unique_id, user_id, bank_name, acc_number, acc_holder, balance FROM BANK_ACCOUNT WHERE user_id = " 
 					   + to_string(user_id) + " AND is_deleted = 0;";
 
-	auto result = database::DatabaseManager::getInstance().executeQuery(query);
+	auto result = db::DatabaseManager::getInstance().executeQuery(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -180,7 +182,7 @@ expected<int, string> Profile::linkBankAccount(
 		return unexpected("User already has a bank account linked.");
 	}
 
-	string uniqueId = database::DatabaseManager::generateUniqueId("ACC");
+	string uniqueId = db::DatabaseManager::generateUniqueId("ACC");
 
 	string query = "INSERT INTO BANK_ACCOUNT (user_id, bank_name, acc_number, acc_holder, unique_id) VALUES (" +
 					   to_string(user_id) + ", '" +
@@ -189,7 +191,7 @@ expected<int, string> Profile::linkBankAccount(
 					   string(acc_holder) + "', '" +
 					   uniqueId + "');";
 
-	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
+	auto result = db::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -197,7 +199,7 @@ expected<int, string> Profile::linkBankAccount(
 
 	// Retrieve the new account ID
 	string selectQuery = "SELECT acc_id FROM BANK_ACCOUNT WHERE user_id = " + to_string(user_id) + " AND is_deleted = 0;";
-	auto selectResult = database::DatabaseManager::getInstance().executeQuery(selectQuery);
+	auto selectResult = db::DatabaseManager::getInstance().executeQuery(selectQuery);
 
 	if (!selectResult) {
 		return unexpected(selectResult.error());
@@ -225,7 +227,7 @@ expected<bool, string> Profile::updateBankAccount(
 					   "', acc_holder = '" + string(acc_holder) + 
 					   "' WHERE acc_id = " + to_string(acc_id) + " AND is_deleted = 0;";
 
-	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
+	auto result = db::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -237,7 +239,7 @@ expected<bool, string> Profile::updateBankAccount(
 expected<bool, string> Profile::removeBankAccount(int acc_id) {
 	string query = "UPDATE BANK_ACCOUNT SET is_deleted = 1 WHERE acc_id = " + to_string(acc_id) + ";";
 
-	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
+	auto result = db::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
 		return unexpected(result.error());
@@ -249,7 +251,7 @@ expected<bool, string> Profile::removeBankAccount(int acc_id) {
 expected<bool, string> Profile::depositBalance(int acc_id, double amount) {
 	string query = "UPDATE BANK_ACCOUNT SET balance = balance + " + to_string(amount) + " WHERE acc_id = " + to_string(acc_id) + ";";
 
-	auto result = database::DatabaseManager::getInstance().executeUpdate(query);
+	auto result = db::DatabaseManager::getInstance().executeUpdate(query);
 
 	if (!result) {
 		return unexpected(result.error());
