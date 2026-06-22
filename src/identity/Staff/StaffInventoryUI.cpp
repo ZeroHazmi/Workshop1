@@ -32,8 +32,8 @@ namespace identity::staffui {
         // Fetch the catalog name to make the header nice (supports ID, exact name, or partial name match, scoped to search results if filter is active)
         string nameQuery = format(
             "SELECT catalog_id, name, unique_id FROM apparel_catalog "
-            "WHERE (unique_id = '{}' OR catalog_id = '{}' OR name = '{}' OR name LIKE '%{}%'){} AND is_deleted = 0 LIMIT 1",
-            catalogUniqueId, catalogUniqueId, catalogUniqueId, catalogUniqueId, filterClause
+            "WHERE (unique_id = '{}' OR name = '{}' OR name LIKE '%{}%'){} AND is_deleted = 0 LIMIT 1",
+            catalogUniqueId, catalogUniqueId, catalogUniqueId, filterClause
         );
         auto nameRes = db.executeQuery(nameQuery);
         if (!nameRes) return false;
@@ -156,7 +156,7 @@ namespace identity::staffui {
             }
             
             auto& db = db::DatabaseManager::getInstance();
-            string q = format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", input, input);
+            string q = format("SELECT item_id, unique_id FROM apparel_item WHERE unique_id = '{}' AND is_deleted = 0", input);
             auto r = db.executeQuery(q);
             if (r) {
                 sql::ResultSet* rs = r.value();
@@ -332,7 +332,7 @@ namespace identity::staffui {
                 continue;
             }
             
-            string q = format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", input, input);
+            string q = format("SELECT item_id, unique_id FROM apparel_item WHERE unique_id = '{}' AND is_deleted = 0", input);
             auto r = db.executeQuery(q);
             if (r) {
                 sql::ResultSet* rs = r.value();
@@ -468,7 +468,7 @@ namespace identity::staffui {
         // Resolve item unique ID
         int itemId = -1;
         string itemUniqueId = "";
-        string q = format("SELECT item_id, unique_id FROM apparel_item WHERE (unique_id = '{}' OR item_id = '{}') AND is_deleted = 0", laundryInput, laundryInput);
+        string q = format("SELECT item_id, unique_id FROM apparel_item WHERE unique_id = '{}' AND is_deleted = 0", laundryInput);
         auto r = db.executeQuery(q);
         if (r) {
             sql::ResultSet* rrs = r.value();
@@ -547,7 +547,6 @@ namespace identity::staffui {
 
     void manageApparelInventory(const auth::UserSession& session) {
         bool inInventoryMenu = true;
-        int invalidAttempts = 0;
         while (inInventoryMenu) {
             tool::ui::showHeader("INVENTORY MANAGEMENT", 64);
             
@@ -566,44 +565,33 @@ namespace identity::staffui {
             if (tool::input::readInt(choice)) {
                 switch(choice) {
                     case 1:
-                        invalidAttempts = 0;
                         inventory::ui::registerNewApparel(session);
                         break;
                     case 2:
-                        invalidAttempts = 0;
                         inventory::ui::showCatalog(session);
                         break;
                     case 3:
-                        invalidAttempts = 0;
                         updateConditionFlow();
                         break;
                     case 4:
-                        invalidAttempts = 0;
                         processLaundryFlow();
                         break;
                     case 5:
-                        invalidAttempts = 0;
                         retireApparelFlow();
                         break;
                     case 6:
-                        invalidAttempts = 0;
                         viewRetiredItemsFlow();
                         break;
                     case 0:
-                        invalidAttempts = 0;
                         inInventoryMenu = false;
                         break;
                     default:
                         println("  Invalid option.");
-                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                            this_thread::sleep_for(chrono::milliseconds(1000));
-                        }
+                        this_thread::sleep_for(chrono::milliseconds(1000));
                 }
             } else {
                 println("  Invalid selection.");
-                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                }
+                this_thread::sleep_for(chrono::milliseconds(1000));
             }
         }
     }

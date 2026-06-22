@@ -18,7 +18,6 @@ namespace identity::authui {
 
     void manageBankAccount(const auth::UserSession& session) {
         bool inBankMenu = true;
-        int invalidAttempts = 0;
         while (inBankMenu) {
             tool::ui::showHeader("BANK ACCOUNT DETAILS", 64);
             
@@ -46,7 +45,6 @@ namespace identity::authui {
                 int option;
                 if (tool::input::readInt(option)) {
                     if (option == 1) {
-                        invalidAttempts = 0;
                         print("  Enter deposit amount: RM ");
                         double amount;
                         if (cin >> amount && amount > 0) {
@@ -64,7 +62,6 @@ namespace identity::authui {
                         }
                         tool::ui::pressZeroToReturn("bank menu", 64);
                     } else if (option == 2) {
-                        invalidAttempts = 0;
                         auto removeRes = profile::Profile::removeBankAccount(bank.acc_id);
                         if (removeRes) {
                             println("\n  Bank account successfully unlinked.");
@@ -73,19 +70,14 @@ namespace identity::authui {
                         }
                         tool::ui::pressZeroToReturn("bank menu", 64);
                     } else if (option == 0) {
-                        invalidAttempts = 0;
                         inBankMenu = false;
                     } else {
                         println("  Invalid selection.");
-                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                            this_thread::sleep_for(chrono::milliseconds(1000));
-                        }
+                        this_thread::sleep_for(chrono::milliseconds(1000));
                     }
                 } else {
                     println("  Invalid selection.");
-                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                    this_thread::sleep_for(chrono::milliseconds(1000));
                 }
             } else {
                 println("  No bank account linked to your profile yet.");
@@ -96,7 +88,6 @@ namespace identity::authui {
                 int choice;
                 if (tool::input::readInt(choice)) {
                     if (choice == 1) {
-                        invalidAttempts = 0;
                         tool::helper::clearScreen();
                         tool::ui::displayTitle("LINK BANK ACCOUNT", 50);
                         println("");
@@ -117,19 +108,14 @@ namespace identity::authui {
                         }
                         tool::ui::pressZeroToReturn("bank menu", 64);
                     } else if (choice == 0) {
-                        invalidAttempts = 0;
                         inBankMenu = false;
                     } else {
                         println("  Invalid selection.");
-                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                            this_thread::sleep_for(chrono::milliseconds(1000));
-                        }
+                        this_thread::sleep_for(chrono::milliseconds(1000));
                     }
                 } else {
                     println("  Invalid selection.");
-                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                    this_thread::sleep_for(chrono::milliseconds(1000));
                 }
             }
         }

@@ -47,6 +47,7 @@ set(SOURCES
 	src/transaction/Rental/AdminStats.cpp
 	src/DatabaseManager/DatabaseManager.cpp
 	src/tool/helper.cpp
+	src/tool/EnvHelper.cpp
 	src/tool/DateHelper.cpp
 	src/tool/CLIComponents.cpp
 	src/tool/input.cpp

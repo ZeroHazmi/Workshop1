@@ -35,7 +35,6 @@ namespace inventory::ui {
       int catalog_id = item.catalog_id;
 
       bool viewingItem = true;
-      int invalidAttempts = 0;
       while (viewingItem) {
         tool::ui::showHeader("ITEM DETAILS", 65);
 
@@ -68,24 +67,20 @@ namespace inventory::ui {
 
         string choice;
         if (!tool::input::readLine(choice)) {
-          tool::ui::handleInvalidAttempt(invalidAttempts);
+          this_thread::sleep_for(chrono::milliseconds(1000));
           continue;
         }
 
         if (choice == "1" && isCustomer) {
-          invalidAttempts = 0;
           bool exitToCatalog = processRentalCheckout(session, item, catalog_id);
           if (exitToCatalog) {
               viewingItem = false;
           }
         } else if (choice == "0") {
-          invalidAttempts = 0;
           viewingItem = false;
         } else {
           println("  Invalid option.");
-          if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-              this_thread::sleep_for(chrono::milliseconds(1000));
-          }
+          this_thread::sleep_for(chrono::milliseconds(1000));
         }
       }
     }
@@ -95,7 +90,6 @@ namespace inventory::ui {
       int currentPage = 1;
       const int itemsPerPage = 25;
       string searchTerm = "";
-      int invalidAttempts = 0;
 
       while (inCatalog) {
         auto countRes = apparel::getTotalApparelsCount(searchTerm);
@@ -144,7 +138,7 @@ namespace inventory::ui {
 
         string choice;
         if (!tool::input::readLine(choice)) {
-          tool::ui::handleInvalidAttempt(invalidAttempts);
+          this_thread::sleep_for(chrono::milliseconds(1000));
           continue;
         }
 
@@ -159,7 +153,6 @@ namespace inventory::ui {
         }
 
         if (validChoice) {
-            invalidAttempts = 0;
             if (choice == "0") {
               inCatalog = false;
             } else if (choice == "N" || choice == "n") {
@@ -177,9 +170,7 @@ namespace inventory::ui {
             }
         } else {
             println("  Invalid option or Item ID not found.");
-            if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                this_thread::sleep_for(chrono::milliseconds(1000));
-            }
+            this_thread::sleep_for(chrono::milliseconds(1000));
         }
       }
     }

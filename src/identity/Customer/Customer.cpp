@@ -17,6 +17,20 @@ namespace identity::customer {
         if (fullname.empty()) {
             return unexpected("Full name is required for customer profile.");
         }
+        if (email.empty()) {
+            return unexpected("Email is required for customer profile.");
+        }
+
+        // Check if email already exists
+        string checkEmailQuery = "SELECT customer_id FROM CUSTOMERS WHERE email = '" + string(email) + "' AND is_deleted = 0;";
+        auto checkRes = db::DatabaseManager::getInstance().executeQuery(checkEmailQuery);
+        if (checkRes && checkRes.value()->next()) {
+            delete checkRes.value();
+            return unexpected("Email address is already registered.");
+        }
+        if (checkRes && checkRes.value()) {
+            delete checkRes.value();
+        }
 
         string uniqueId = db::DatabaseManager::generateUniqueId("CST");
 

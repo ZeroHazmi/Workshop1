@@ -139,8 +139,8 @@ namespace inventory::apparel {
         auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "SELECT catalog_id, unique_id, shop_id, name, description, category, colour, daily_rate "
-            "FROM apparel_catalog WHERE (unique_id = '{}' OR catalog_id = '{}') AND is_deleted = 0",
-            string(unique_id), string(unique_id)
+            "FROM apparel_catalog WHERE unique_id = '{}' AND is_deleted = 0",
+            string(unique_id)
         );
 
         auto result = db.executeQuery(query);

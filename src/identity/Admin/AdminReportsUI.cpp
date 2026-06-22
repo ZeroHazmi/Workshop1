@@ -178,7 +178,7 @@ namespace identity::adminui {
             vector<int> validatedIds;
             vector<string> validatedNames;
             for (const string& uid : newUniqueIds) {
-                string checkQuery = "SELECT shop_id, shop_name FROM shops WHERE unique_id = '" + uid + "' OR shop_id = '" + uid + "';";
+                string checkQuery = "SELECT shop_id, shop_name FROM shops WHERE unique_id = '" + uid + "';";
                 auto checkRes = db.executeQuery(checkQuery);
                 if (checkRes) {
                     sql::ResultSet* crs = checkRes.value();
@@ -229,7 +229,6 @@ namespace identity::adminui {
         }
         
         bool inStats = true;
-        int invalidAttempts = 0;
         while (inStats) {
             tool::ui::showHeader("BUSINESS REPORTS & STATISTICS", 64);
             
@@ -264,34 +263,24 @@ namespace identity::adminui {
             choiceStr.erase(choiceStr.find_last_not_of(" \t\r\n") + 1);
 
             if (choiceStr == "1") {
-                invalidAttempts = 0;
                 reports::showMonthlyRevenueReport(activeShopIds, activeShopNames, activeDateRange, activeDateRangeLabel);
             } else if (choiceStr == "2") {
-                invalidAttempts = 0;
                 reports::showCostumePopularityReport(activeShopIds, activeShopNames, activeDateRange, activeDateRangeLabel);
             } else if (choiceStr == "3") {
-                invalidAttempts = 0;
                 reports::showBranchPerformanceReport(activeShopIds, activeShopNames, activeDateRange, activeDateRangeLabel);
             } else if (choiceStr == "4") {
-                invalidAttempts = 0;
                 reports::showInventoryQualityReport(activeShopIds, activeShopNames);
             } else if (choiceStr == "5") {
-                invalidAttempts = 0;
                 reports::showInvoiceLedgerReport(activeShopIds, activeShopNames);
             } else if (choiceStr == "F" || choiceStr == "f") {
-                invalidAttempts = 0;
                 updateActiveFilters(activeShopIds, activeShopNames);
             } else if (choiceStr == "T" || choiceStr == "t") {
-                invalidAttempts = 0;
                 updateActiveDateRange(activeDateRange, activeDateRangeLabel);
             } else if (choiceStr == "0") {
-                invalidAttempts = 0;
                 inStats = false;
             } else {
                 println("  Invalid option.");
-                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                }
+                this_thread::sleep_for(chrono::milliseconds(1000));
             }
         }
     }

@@ -43,34 +43,27 @@ namespace identity::staffui {
 
     void handleStaffDashboard(const auth::UserSession& session) {
         bool inStaffPanel = true;
-        int invalidAttempts = 0;
         while (inStaffPanel) {
             showStaffDashboard(session);
             
             int choice;
             if (!tool::input::readInt(choice)) {
                 println("  Invalid selection.");
-                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                }
+                this_thread::sleep_for(chrono::milliseconds(1000));
                 continue;
             }
 
             switch (choice) {
                 case 1:
-                    invalidAttempts = 0;
                     manageApparelInventory(session);
                     break;
                 case 2:
-                    invalidAttempts = 0;
                     manageRentalsAndReturns(session);
                     break;
                 case 3:
-                    invalidAttempts = 0;
                     viewStaffProfile(session);
                     break;
                 case 0:
-                    invalidAttempts = 0;
                     println("\nLogging out...");
                     inStaffPanel = false;
 
@@ -83,9 +76,8 @@ namespace identity::staffui {
                     break;
                 default:
                     println("  Invalid option.");
-                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                    break;
             }
         }
     }

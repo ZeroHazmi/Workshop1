@@ -1,6 +1,7 @@
 #include "identity/Admin/Reports/ReportsInternal.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "tool/Colors.h"
 #include <print>
 #include <string>
 #include <iostream>
@@ -60,20 +61,7 @@ namespace identity::adminui::reports {
                     println("");
 
                     int maxBarWidth = 25;
-                    const vector<string> barColors = {
-                        "\033[96m", // Bright Cyan
-                        "\033[95m", // Bright Magenta
-                        "\033[93m", // Bright Yellow
-                        "\033[94m", // Bright Blue
-                        "\033[92m", // Bright Green
-                        "\033[91m", // Bright Red
-                        "\033[36m", // Cyan
-                        "\033[35m", // Magenta
-                        "\033[33m", // Yellow
-                        "\033[34m", // Blue
-                        "\033[32m", // Green
-                        "\033[31m"  // Red
-                    };
+                    const auto& barColors = tool::colors::GRAPH_PALETTE;
                     size_t cIdx = 0;
                     for (const auto& pt : points) {
                         int barWidth = maxCount > 0 ? (pt.rental_count * maxBarWidth / maxCount) : 0;
@@ -82,10 +70,10 @@ namespace identity::adminui::reports {
                             unicodeBar += "█";
                         }
                         string spaces(maxBarWidth - barWidth, ' ');
-                        string color = barColors[cIdx % barColors.size()];
+                        string_view color = barColors[cIdx % barColors.size()];
                         cIdx++;
                         print("  {:<{}} | {}{}{} ({} rentals)\n", 
-                                   pt.catalog_name, maxCatalogNameLen, color, unicodeBar + spaces, "\033[0m", pt.rental_count);
+                                   pt.catalog_name, maxCatalogNameLen, color, unicodeBar + spaces, tool::colors::RESET, pt.rental_count);
                     }
                     println("");
                     tool::helper::drawLine(64, '=');

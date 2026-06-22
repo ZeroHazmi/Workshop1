@@ -103,4 +103,4 @@ string normalizeDateStr(const string &dateStr) {
   return dateStr;
 }
 
-} // namespace tool::date
+}

@@ -1,6 +1,7 @@
 #include "identity/Admin/Reports/ReportsInternal.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "tool/Colors.h"
 #include <print>
 #include <string>
 #include <iostream>
@@ -50,20 +51,7 @@ namespace identity::adminui::reports {
                     print("{}\n\n", format("  Total Combined Revenue: RM {:.2f}", totalRevenue));
                     
                     if (totalRevenue > 0.0) {
-                        const vector<string> barColors = {
-                            "\033[96m", // Bright Cyan
-                            "\033[95m", // Bright Magenta
-                            "\033[93m", // Bright Yellow
-                            "\033[94m", // Bright Blue
-                            "\033[92m", // Bright Green
-                            "\033[91m", // Bright Red
-                            "\033[36m", // Cyan
-                            "\033[35m", // Magenta
-                            "\033[33m", // Yellow
-                            "\033[34m", // Blue
-                            "\033[32m", // Green
-                            "\033[31m"  // Red
-                        };
+                        const auto& barColors = tool::colors::GRAPH_PALETTE;
                         size_t cIdx = 0;
                         for (const auto& pt : branches) {
                             double pct = (pt.revenue / totalRevenue) * 100.0;
@@ -73,11 +61,11 @@ namespace identity::adminui::reports {
                             string remStr = "";
                             for (int i = 0; i < (40 - barChars); ++i) remStr += "░";
                             
-                            string color = barColors[cIdx % barColors.size()];
+                            string_view color = barColors[cIdx % barColors.size()];
                             cIdx++;
                             
                             print("  {:<20} [ {}{}{}{} ] {:5.1f}% (RM {:.2f})\n", 
-                                pt.shop_name, color, barStr, "\033[0m", remStr, pct, pt.revenue);
+                                pt.shop_name, color, barStr, tool::colors::RESET, remStr, pct, pt.revenue);
                         }
                     } else {
                         println("  No revenue generated yet.");

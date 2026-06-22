@@ -40,10 +40,10 @@ private:
     std::unique_ptr<sql::Connection> con;
 
     // Credentials matching your existing MySQL setup
-    const std::string host = "tcp://127.0.0.1:3306";
-    const std::string user = "root";
-    const std::string pass = "Testing184"; 
-    const std::string schema = "clothing_rental";
+    std::string host = "tcp://127.0.0.1:3306";
+    std::string user = "root";
+    std::string pass = ""; 
+    std::string schema = "clothing_rental";
 };
 
 } // namespace database

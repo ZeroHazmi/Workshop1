@@ -1,4 +1,5 @@
 #include "DatabaseManager/DatabaseManager.h"
+#include "tool/EnvHelper.h"
 #include <print>
 #include <random>
 #include <format>
@@ -13,6 +14,11 @@ DatabaseManager::~DatabaseManager() {
 }
 
 expected<void, string> DatabaseManager::connect() {
+    host = tool::env::get("DB_HOST", "tcp://127.0.0.1:3306");
+    user = tool::env::get("DB_USER", "root");
+    pass = tool::env::get("DB_PASS", "");
+    schema = tool::env::get("DB_SCHEMA", "clothing_rental");
+
     try {
         driver = get_driver_instance();
         con.reset(driver->connect(host, user, pass));

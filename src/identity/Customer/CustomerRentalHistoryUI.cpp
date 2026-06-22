@@ -2,6 +2,7 @@
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
 #include "tool/input.h"
+#include "tool/Colors.h"
 #include "transaction/Rental/Rental.h"
 #include <print>
 #include <string>
@@ -58,7 +59,6 @@ namespace identity::authui {
 
     void handleRentalHistoryMenu(const auth::UserSession& session) {
         bool inSubMenu = true;
-        int invalidAttempts = 0;
         while (inSubMenu) {
             tool::ui::showHeader("RENTAL HISTORY GATEWAY", 50);
             println("  [1] View Detailed Transaction Log");
@@ -72,28 +72,21 @@ namespace identity::authui {
             if (tool::input::readInt(choice)) {
                 switch (choice) {
                     case 1:
-                        invalidAttempts = 0;
                         viewRentalHistory(session);
                         break;
                     case 2:
-                        invalidAttempts = 0;
                         viewBookingBehaviour(session);
                         break;
                     case 0:
-                        invalidAttempts = 0;
                         inSubMenu = false;
                         break;
                     default:
                         println("  Invalid selection.");
-                        if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                            this_thread::sleep_for(chrono::milliseconds(1000));
-                        }
+                        this_thread::sleep_for(chrono::milliseconds(1000));
                 }
             } else {
                 println("  Invalid selection.");
-                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                }
+                this_thread::sleep_for(chrono::milliseconds(1000));
             }
         }
     }
@@ -123,20 +116,7 @@ namespace identity::authui {
         }
 
         // Color palette for graphs (12 unique distinct colors)
-        const vector<string> barColors = {
-            "\033[96m", // Bright Cyan
-            "\033[95m", // Bright Magenta
-            "\033[93m", // Bright Yellow
-            "\033[94m", // Bright Blue
-            "\033[92m", // Bright Green
-            "\033[91m", // Bright Red
-            "\033[36m", // Cyan
-            "\033[35m", // Magenta
-            "\033[33m", // Yellow
-            "\033[34m", // Blue
-            "\033[32m", // Green
-            "\033[31m"  // Red
-        };
+        const auto& barColors = tool::colors::GRAPH_PALETTE;
 
         // 1. POPULAR CATEGORIES (Horizontal Bar Chart)
         println("  [1] CATEGORY POPULARITY");
@@ -160,11 +140,11 @@ namespace identity::authui {
                 bar += "█";
             }
             string spaces = string(maxBarWidth - barWidth, ' ');
-            string color = barColors[catColorIdx % barColors.size()];
+            string_view color = barColors[catColorIdx % barColors.size()];
             catColorIdx++;
 
             print("  {:<{}} : [ {}{}{} ] {}% ({} rentals)\n", 
-                       cat.category, maxCategoryLen, color, bar, "\033[0m" + spaces, percentage, cat.count);
+                       cat.category, maxCategoryLen, color, bar, string(tool::colors::RESET) + spaces, percentage, cat.count);
         }
         println("");
 
@@ -184,9 +164,11 @@ namespace identity::authui {
             string lateStr = "";
             for (int i = 0; i < lateBar; ++i) lateStr += "░";
             
-            print("  Split Ratio: [ \033[92m{}\033[91m{}\033[0m ]\n", onTimeStr, lateStr);
-            print("  Legend     : (\033[92m█\033[0m) On-Time [{} | {}%]  (\033[91m░\033[0m) Overdue [{} | {}%]\n", 
+            print("  Split Ratio: [ {}{}{}{} ]\n", tool::colors::BRIGHT_GREEN, onTimeStr, tool::colors::BRIGHT_RED, lateStr, tool::colors::RESET);
+            print("  Legend     : ({}) On-Time [{} | {}%]  ({}) Overdue [{} | {}%]\n", 
+                    format("{}{}{}", tool::colors::BRIGHT_GREEN, "█", tool::colors::RESET),
                     onTimeTotal, (onTimeTotal * 100) / sumReturn,
+                    format("{}{}{}", tool::colors::BRIGHT_RED, "░", tool::colors::RESET),
                     lateTotal, (lateTotal * 100) / sumReturn);
         } else {
             println("  No return tracking logs available.");
@@ -210,10 +192,10 @@ namespace identity::authui {
                 print("  {:3d} | ", threshold);
                 size_t mIdx = 0;
                 for (const auto& m : stats.monthly_trends) {
-                    string color = barColors[mIdx % barColors.size()];
+                    string_view color = barColors[mIdx % barColors.size()];
                     mIdx++;
                     if (m.count >= threshold && m.count > 0) {
-                        print("   {}{}{}   ", color, "███", "\033[0m");
+                        print("   {}{}{}   ", color, "███", tool::colors::RESET);
                     } else {
                         print("         ");
                     }

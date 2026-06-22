@@ -25,7 +25,6 @@ namespace identity::adminui::reports {
         string statusFilter = "ALL"; // ALL, Paid, Settled, Overdue
         int currentPage = 1;
         const int itemsPerPage = 15;
-        int invalidAttemptsLedger = 0;
 
         while (inLedger) {
             tool::ui::showHeader("INVOICE LEDGER & AUDITING", 118);
@@ -139,16 +138,12 @@ namespace identity::adminui::reports {
             getline(cin, ledgerInput);
 
             if (ledgerInput == "0") {
-                invalidAttemptsLedger = 0;
                 inLedger = false;
             } else if (ledgerInput == "N" || ledgerInput == "n") {
-                invalidAttemptsLedger = 0;
                 if (currentPage < totalPages) currentPage++;
             } else if (ledgerInput == "P" || ledgerInput == "p") {
-                invalidAttemptsLedger = 0;
                 if (currentPage > 1) currentPage--;
             } else if (ledgerInput == "F" || ledgerInput == "f") {
-                invalidAttemptsLedger = 0;
                 println("\n  Select Status Filter:");
                 println("  [1] All Invoices");
                 println("  [2] Paid (Active Rentals)");
@@ -164,9 +159,7 @@ namespace identity::adminui::reports {
                 currentPage = 1;
             } else {
                 println("  Invalid choice.");
-                if (!tool::ui::handleInvalidAttempt(invalidAttemptsLedger)) {
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                }
+                this_thread::sleep_for(chrono::milliseconds(1000));
             }
         }
     }

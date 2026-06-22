@@ -1,6 +1,7 @@
 #include "identity/Admin/Reports/ReportsInternal.h"
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
+#include "tool/Colors.h"
 #include <print>
 #include <string>
 #include <iostream>
@@ -53,29 +54,16 @@ namespace identity::adminui::reports {
                     // Print vertical bar chart
                     println("  Total (RM)");
                     int maxRows = 10;
-                    const vector<string> barColors = {
-                        "\033[96m", // Bright Cyan
-                        "\033[95m", // Bright Magenta
-                        "\033[93m", // Bright Yellow
-                        "\033[94m", // Bright Blue
-                        "\033[92m", // Bright Green
-                        "\033[91m", // Bright Red
-                        "\033[36m", // Cyan
-                        "\033[35m", // Magenta
-                        "\033[33m", // Yellow
-                        "\033[34m", // Blue
-                        "\033[32m", // Green
-                        "\033[31m"  // Red
-                    };
+                    const auto& barColors = tool::colors::GRAPH_PALETTE;
                     for (int r = maxRows; r >= 1; --r) {
                         double threshold = maxRev * (r / (double)maxRows);
                         print("  {:9.2f} | ", threshold);
                         size_t cIdx = 0;
                         for (const auto& pt : trends) {
-                            string color = barColors[cIdx % barColors.size()];
+                            string_view color = barColors[cIdx % barColors.size()];
                             cIdx++;
                             if (pt.revenue >= threshold && pt.revenue > 0.0) {
-                                print("   {}{}{}   ", color, "███", "\033[0m");
+                                print("   {}{}{}   ", color, "███", tool::colors::RESET);
                             } else {
                                 print("         ");
                             }

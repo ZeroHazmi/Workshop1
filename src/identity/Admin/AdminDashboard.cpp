@@ -40,38 +40,30 @@ namespace identity::adminui {
 
     void handleAdminDashboard(const auth::UserSession& session) {
         bool inAdminPanel = true;
-        int invalidAttempts = 0;
         while (inAdminPanel) {
             showAdminDashboard(session);
             
             int choice;
             if (!tool::input::readInt(choice)) {
                 println("  Invalid selection.");
-                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                }
+                this_thread::sleep_for(chrono::milliseconds(1000));
                 continue;
             }
 
             switch (choice) {
                 case 1:
-                    invalidAttempts = 0;
                     showStaffManagementSubmenu(session);
                     break;
                 case 2:
-                    invalidAttempts = 0;
                     showShopManagementSubmenu(session);
                     break;
                 case 3:
-                    invalidAttempts = 0;
                     showBusinessStatsSubmenu(session);
                     break;
                 case 4:
-                    invalidAttempts = 0;
                     viewAdminProfile(session);
                     break;
                 case 0:
-                    invalidAttempts = 0;
                     println("\nLogging out...");
                     inAdminPanel = false;
 
@@ -84,9 +76,8 @@ namespace identity::adminui {
                     break;
                 default:
                     println("  Invalid option.");
-                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                    break;
             }
         }
     }

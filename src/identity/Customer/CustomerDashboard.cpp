@@ -24,14 +24,7 @@ namespace identity::authui {
         tool::helper::drawLine(64, '-');
         tool::ui::displayTitle("Location: Universiti Teknikal Malaysia Melaka (UTeM) ", 64);
         tool::helper::drawLine(64, '=');
-
-        // for (int i = 0; i < 3; ++i) {
-        //     this_thread::sleep_for(chrono::milliseconds(700));
-        //     print(".");
-        // }
         println("\n");
-
-        // tool::helper::clearScreen();
     }
 
     void showCustomerDashboard(const auth::UserSession& session) {
@@ -49,7 +42,7 @@ namespace identity::authui {
         // Vertical Menu Options
         println("  [1] Browse Apparel Inventory");
         println("  [2] View My Rental History");
-        println("  [3] Update Personal Profile");
+        println("  [3] View Personal Profile");
         println("  [4] Manage Bank Account Details");
         println("  [0] Logout");
         
@@ -60,41 +53,30 @@ namespace identity::authui {
 
     void handleCustomerDashboard(const auth::UserSession& session) {
         bool inDashboard = true;
-        int invalidAttempts = 0;
         while (inDashboard) {
             showCustomerDashboard(session);
             
             int subChoice;
             if (!tool::input::readInt(subChoice)) {
                 println("  Invalid selection.");
-                if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                    this_thread::sleep_for(chrono::milliseconds(1000));
-                }
+                this_thread::sleep_for(chrono::milliseconds(1000));
                 continue;
             }
 
             switch (subChoice) {
                 case 1: 
-                    invalidAttempts = 0;
-                    // inventory::browseApparel
                     inventory::ui::showCatalog(session);
                     break;
                 case 2: 
-                    invalidAttempts = 0;
                     handleRentalHistoryMenu(session); 
                     break;
                 case 3: 
-                    invalidAttempts = 0;
-                    // profile::updateProfile(session.userid);
                     viewProfile(session); 
                     break;
                 case 4: 
-                    invalidAttempts = 0;
-                    // profile::manageBank(session.userid);
                     manageBankAccount(session);
                     break;
                 case 0:
-                    invalidAttempts = 0;
                     println("\nLogging out...");
                     inDashboard = false;
 
@@ -109,9 +91,7 @@ namespace identity::authui {
                     break;
                 default:
                     println("  Invalid selection.");
-                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                    this_thread::sleep_for(chrono::milliseconds(1000));
             }
         }
     }

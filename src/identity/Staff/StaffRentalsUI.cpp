@@ -23,7 +23,6 @@ namespace identity::staffui {
         string searchTerm = "";
         int currentPage = 1;
         const int itemsPerPage = 25;
-        int invalidAttempts = 0;
 
         while (inRentalsMenu) {
             tool::ui::showHeader("ACTIVE & OVERDUE RENTALS MANAGEMENT", 85);
@@ -89,21 +88,16 @@ namespace identity::staffui {
                 getline(cin, input);
 
                 if (input == "0") {
-                    invalidAttempts = 0;
                     inRentalsMenu = false;
                 } else if (input == "N" || input == "n") {
-                    invalidAttempts = 0;
                     if (currentPage < totalPages) currentPage++;
                 } else if (input == "P" || input == "p") {
-                    invalidAttempts = 0;
                     if (currentPage > 1) currentPage--;
                 } else if (input == "S" || input == "s") {
-                    invalidAttempts = 0;
                     print("  Enter search query (Customer or Apparel name): ");
                     getline(cin, searchTerm);
                     currentPage = 1;
                 } else if (input == "R" || input == "r") {
-                    invalidAttempts = 0;
                     // Inline Check-in costume return flow!
                     println("\n  --- PROCESS COSTUME RETURN ---");
                     string rentalIdInput;
@@ -158,9 +152,7 @@ namespace identity::staffui {
                     tool::ui::pressZeroToReturn("previous menu", 85);
                 } else {
                     println("  Invalid choice.");
-                    if (!tool::ui::handleInvalidAttempt(invalidAttempts)) {
-                        this_thread::sleep_for(chrono::milliseconds(1000));
-                    }
+                    this_thread::sleep_for(chrono::milliseconds(1000));
                 }
             } else {
                 println("  Error retrieving active rentals: {}", result.error());

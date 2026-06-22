@@ -18,6 +18,7 @@
 #include "tool/helper.h"
 #include "tool/CLIComponents.h"
 #include "tool/input.h"
+#include "tool/EnvHelper.h"
 
 namespace db = ::database;
 namespace auth = ::identity::auth;
@@ -33,6 +34,9 @@ int main() {
     SetConsoleCP(CP_UTF8);
 #endif
 
+    // Load configuration settings from local environment file
+    tool::env::load(".env");
+
     if (!db::DatabaseManager::getInstance().connect()) {
         println(stderr, "Application failed to start: Database connection error.");
         return 1;
@@ -40,17 +44,18 @@ int main() {
 
 // 2. Instantiate Auth Service
     auth::Auth authService;
-    
-    // Formal Landing Screen
-    authui::showSplashScreen();
 
     int invalidAttempts = 0;
     bool systemRunning = true;
     while (systemRunning) {
+        // Formal Landing Screen
+        authui::showSplashScreen();
+
         println("\n--- MAIN GATEWAY ---");
         println("[1] Login");
         println("[2] Register New Account");
-        println("[3] Exit System");
+        println("[3] Forgot Password");
+        println("[0] Exit System");
         print("Selection: ");
 
         int choice;
@@ -98,6 +103,10 @@ int main() {
                 authService.handleRegisterFlow("customer");
                 break;
             case 3:
+                invalidAttempts = 0;
+                auth::Auth::handleForgotPasswordFlow();
+                break;
+            case 0:
                 invalidAttempts = 0;
                 println("Shutting down FWCRS. Goodbye.");
                 systemRunning = false;
