@@ -143,7 +143,10 @@ namespace identity::staffui {
                 print("  Enter Catalog ID or Name to view physical items (or 0 to cancel): ");
                 string catalogInput;
                 getline(cin, catalogInput);
-                if (catalogInput == "0" || catalogInput.empty()) {
+                if (catalogInput == "0") {
+                    return;
+                }
+                if (catalogInput.empty()) {
                     continue;
                 }
                 bool foundCat = displayCatalogItemsHelper(catalogInput, qText);
@@ -320,7 +323,10 @@ namespace identity::staffui {
                 print("  Enter Catalog ID or Name to view physical items (or 0 to cancel): ");
                 string catalogInput;
                 getline(cin, catalogInput);
-                if (catalogInput == "0" || catalogInput.empty()) {
+                if (catalogInput == "0") {
+                    return;
+                }
+                if (catalogInput.empty()) {
                     continue;
                 }
                 bool foundCat = displayCatalogItemsHelper(catalogInput, qText);
