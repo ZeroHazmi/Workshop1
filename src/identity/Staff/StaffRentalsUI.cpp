@@ -79,7 +79,7 @@ namespace identity::staffui {
                 } else {
                     println("  [S] Search Rentals");
                 }
-                println("  [R] Process Return/Check-in Costume");
+                println("  [R] Process Return Costume/Clothing");
                 println("  [0] Back to Main Dashboard");
                 tool::helper::drawLine(85, '-');
                 print("  Enter choice: ");
