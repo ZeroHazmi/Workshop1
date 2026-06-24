@@ -38,10 +38,14 @@ namespace inventory::apparel {
         for (const auto& batch : batches) {
             for (int i = 0; i < batch.quantity; ++i) {
                 string itemUniqueId = db::DatabaseManager::generateUniqueId("ITM");
+                string initialStatus = "Available";
+                if (batch.condition == "Fair" || batch.condition == "Poor" || batch.condition == "Damaged") {
+                    initialStatus = "Maintenance";
+                }
                 string item_query = format(
                     "INSERT INTO apparel_item (catalog_id, size, status, condition_status, unique_id) "
-                    "VALUES ({}, '{}', 'Available', '{}', '{}')",
-                    catalog_id, batch.size, batch.condition, itemUniqueId
+                    "VALUES ({}, '{}', '{}', '{}', '{}')",
+                    catalog_id, batch.size, initialStatus, batch.condition, itemUniqueId
                 );
                 auto item_res = db.executeUpdate(item_query);
                 if (!item_res) {
@@ -78,7 +82,7 @@ namespace inventory::apparel {
         
         string query = 
             "SELECT c.catalog_id, c.unique_id, c.shop_id, c.name, c.category, c.daily_rate, "
-            "(SELECT COUNT(*) FROM apparel_item i WHERE i.catalog_id = c.catalog_id AND i.status = 'Available' AND i.is_deleted = 0) AS available_stock "
+            "(SELECT COUNT(*) FROM apparel_item i WHERE i.catalog_id = c.catalog_id AND i.status = 'Available' AND i.condition_status NOT IN ('Fair', 'Poor', 'Damaged') AND i.is_deleted = 0) AS available_stock "
             "FROM apparel_catalog c WHERE c.is_deleted = 0";
             
         if (!searchTerm.empty()) {
@@ -168,7 +172,7 @@ namespace inventory::apparel {
         auto& db = db::DatabaseManager::getInstance();
         string query = format(
             "SELECT size, COUNT(*) as qty FROM apparel_item "
-            "WHERE catalog_id = {} AND status = 'Available' AND is_deleted = 0 "
+            "WHERE catalog_id = {} AND status = 'Available' AND condition_status NOT IN ('Fair', 'Poor', 'Damaged') AND is_deleted = 0 "
             "GROUP BY size ORDER BY size", catalog_id
         );
 
@@ -213,10 +217,20 @@ namespace inventory::apparel {
 
     expected<void, string> updateItemCondition(int item_id, string_view condition) {
         auto& db = db::DatabaseManager::getInstance();
-        string query = format(
-            "UPDATE apparel_item SET condition_status = '{}' WHERE item_id = {} AND is_deleted = 0",
-            condition, item_id
-        );
+        
+        string query;
+        if (condition == "Fair" || condition == "Poor" || condition == "Damaged") {
+            query = format(
+                "UPDATE apparel_item SET condition_status = '{}', status = 'Maintenance' WHERE item_id = {} AND is_deleted = 0",
+                condition, item_id
+            );
+        } else {
+            query = format(
+                "UPDATE apparel_item SET condition_status = '{}' WHERE item_id = {} AND is_deleted = 0",
+                condition, item_id
+            );
+        }
+
         auto result = db.executeUpdate(query);
         if (!result) return unexpected(result.error());
         return {};
@@ -224,6 +238,26 @@ namespace inventory::apparel {
 
     expected<void, string> updateItemStatus(int item_id, string_view status) {
         auto& db = db::DatabaseManager::getInstance();
+
+        if (status == "Available") {
+            string checkQuery = format(
+                "SELECT condition_status FROM apparel_item WHERE item_id = {} AND is_deleted = 0",
+                item_id
+            );
+            auto checkRes = db.executeQuery(checkQuery);
+            if (checkRes) {
+                sql::ResultSet* rs = checkRes.value();
+                if (rs->next()) {
+                    string cond = rs->getString("condition_status");
+                    if (cond == "Fair" || cond == "Poor" || cond == "Damaged") {
+                        delete rs;
+                        return unexpected("Cannot set status to Available. Item condition is '" + cond + "' and must remain in Maintenance.");
+                    }
+                }
+                delete rs;
+            }
+        }
+
         string query = format(
             "UPDATE apparel_item SET status = '{}' WHERE item_id = {} AND is_deleted = 0",
             status, item_id

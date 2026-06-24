@@ -24,6 +24,14 @@ expected<void, string> DatabaseManager::connect() {
         con.reset(driver->connect(host, user, pass));
         con->setSchema(schema);
         
+        // Auto-correct any pre-existing/legacy items with Fair, Poor, or Damaged condition to Maintenance status
+        unique_ptr<Statement> stmt(con->createStatement());
+        stmt->executeUpdate(
+            "UPDATE apparel_item SET status = 'Maintenance' "
+            "WHERE condition_status IN ('Fair', 'Poor', 'Damaged') "
+            "  AND status != 'Maintenance' AND is_deleted = 0"
+        );
+        
         println("Successfully connected to database database.");
         return {}; 
     } catch (SQLException& e) {

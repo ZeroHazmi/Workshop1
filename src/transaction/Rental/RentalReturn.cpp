@@ -141,8 +141,12 @@ namespace transaction::rental {
         if (!detailsRes) return unexpected("Failed to update rental details: " + detailsRes.error());
 
         // 6. Update apparel_item status and condition
-        // All returned items go to Laundry first to ensure hygiene and sanitation
+        // All returned items go to Laundry first to ensure hygiene and sanitation,
+        // except those in Fair, Poor, or Damaged condition, which are routed to Maintenance.
         string nextStatus = "Laundry";
+        if (condition == "Fair" || condition == "Poor" || condition == "Damaged") {
+            nextStatus = "Maintenance";
+        }
         string itemUpdate = format(
             "UPDATE apparel_item SET status = '{}', condition_status = '{}' WHERE item_id = {} AND is_deleted = 0",
             nextStatus, condition, item_id

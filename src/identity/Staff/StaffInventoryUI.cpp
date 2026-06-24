@@ -211,7 +211,10 @@ namespace identity::staffui {
                 case 3: condition = "Fair"; break;
                 case 4: condition = "Poor"; break;
                 case 5: condition = "Damaged"; break;
-                default: print("  Invalid option.\n"); return;
+                default: 
+                    print("  Invalid option.\n"); 
+                    this_thread::sleep_for(chrono::milliseconds(1000));
+                    return;
             }
 
             auto result = apparel::updateItemCondition(itemId, condition);

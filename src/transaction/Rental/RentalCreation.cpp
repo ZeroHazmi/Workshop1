@@ -40,7 +40,8 @@ namespace transaction::rental {
           format("SELECT i.item_id, c.shop_id FROM apparel_item i "
                       "JOIN apparel_catalog c ON i.catalog_id = c.catalog_id "
                       "WHERE i.catalog_id = {} AND i.size = '{}' AND i.status "
-                      "= 'Available' AND i.is_deleted = 0 "
+                      "= 'Available' AND i.condition_status NOT IN ('Fair', 'Poor', 'Damaged') "
+                      "AND i.is_deleted = 0 "
                       "LIMIT 1",
                       catalog_id, size);
       auto itemRes = db.executeQuery(itemQuery);
